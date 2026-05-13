@@ -1,0 +1,95 @@
+{
+  "user": {
+    "uuid": "550e8400-e29b-41d4-a716-446655440000",
+    "firstName": "Jan",
+    "lastName": "Kowalski",
+    "email": "jan.kowalski@university.edu"
+  },
+  "courses": [
+    {
+      "uuid": "f47ac10b-58cc-4372-a567-0e02b2c3d479",
+      "name": "Programming Fundamentals",
+      "description": "Introduction to programming in TypeScript",
+      "assignments": [
+        {
+          "uuid": "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Variable vs Constant",
+          "description": "Understand the difference between variables and constants",
+          "dueDate": "2026-05-20T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
+          "name": "For Loop",
+          "description": "Implement for loops in practice",
+          "dueDate": "2026-05-27T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Functions",
+          "description": "Write functions with different signatures",
+          "dueDate": "2026-06-03T23:59:59Z"
+        }
+      ],
+      "users": [
+        {
+          "uuid": "550e8400-e29b-41d4-a716-446655440000",
+          "firstName": "Jan",
+          "lastName": "Kowalski",
+          "email": "jan.kowalski@university.edu"
+        },
+        {
+          "uuid": "550e8400-e29b-41d4-a716-446655440001",
+          "firstName": "Anna",
+          "lastName": "Nowak",
+          "email": "anna.nowak@university.edu"
+        },
+        {
+          "uuid": "550e8400-e29b-41d4-a716-446655440002",
+          "firstName": "Piotr",
+          "lastName": "Grabowski",
+          "email": "piotr.grabowski@university.edu"
+        }
+      ]
+    },
+    {
+      "uuid": "f47ac10b-58cc-4372-a567-0e02b2c3d480",
+      "name": "Databases",
+      "description": "Database design and optimization",
+      "assignments": [
+        {
+          "uuid": "6ba7b813-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Normalization",
+          "description": "Database schema normalization",
+          "dueDate": "2026-05-25T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b814-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Indexes",
+          "description": "Optimization using indexes",
+          "dueDate": "2026-06-01T23:59:59Z"
+        }
+      ],
+      "users": [
+        {
+          "uuid": "550e8400-e29b-41d4-a716-446655440000",
+          "firstName": "Jan",
+          "lastName": "Kowalski",
+          "email": "jan.kowalski@university.edu"
+        },
+        {
+          "uuid": "550e8400-e29b-41d4-a716-446655440001",
+          "firstName": "Anna",
+          "lastName": "Nowak",
+          "email": "anna.nowak@university.edu"
+        },
+        {
+          "uuid": "550e8400-e29b-41d4-a716-446655440002",
+          "firstName": "Piotr",
+          "lastName": "Grabowski",
+          "email": "piotr.grabowski@university.edu"
+        }
+      ]
+    }
+  ]
+}
+

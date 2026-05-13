@@ -1,0 +1,80 @@
+{
+  "user": {
+    "uuid": "user-001",
+    "firstName": "Jan",
+    "lastName": "Kowalski",
+    "email": "jan.kowalski@university.edu"
+  },
+  "courses": [
+    {
+      "uuid": "course-001",
+      "name": "Podstawy Programowania",
+      "description": "Wprowadzenie do programowania w TypeScript",
+      "assignments": [
+        {
+          "uuid": "assignment-001",
+          "name": "Zmienna a stała",
+          "description": "Zrozumieć różnicę między zmiennymi a stałymi",
+          "dueDate": "2026-05-20T23:59:59Z",
+          "submissionDate": null,
+          "pointsGained": null,
+          "pointsMax": 10
+        },
+        {
+          "uuid": "assignment-002",
+          "name": "Pętla for",
+          "description": "Implementuj pętle for w praktyce",
+          "dueDate": "2026-05-27T23:59:59Z",
+          "submissionDate": null,
+          "pointsGained": null,
+          "pointsMax": 15
+        },
+        {
+          "uuid": "assignment-003",
+          "name": "Funkcje",
+          "description": "Napisz funkcje o różnych sygnaturach",
+          "dueDate": "2026-06-03T23:59:59Z",
+          "submissionDate": "2026-06-01T10:30:00Z",
+          "pointsGained": 18,
+          "pointsMax": 20
+        }
+      ],
+      "leaderboard": {
+        "user-001": 18,
+        "user-002": 25,
+        "user-003": 20
+      }
+    },
+    {
+      "uuid": "course-002",
+      "name": "Bazy Danych",
+      "description": "Projektowanie i optymalizacja baz danych",
+      "assignments": [
+        {
+          "uuid": "assignment-004",
+          "name": "Normalizacja",
+          "description": "Normalizacja schematów baz danych",
+          "dueDate": "2026-05-25T23:59:59Z",
+          "submissionDate": "2026-05-24T15:00:00Z",
+          "pointsGained": 12,
+          "pointsMax": 15
+        },
+        {
+          "uuid": "assignment-005",
+          "name": "Indeksy",
+          "description": "Optymalizacja za pomocą indeksów",
+          "dueDate": "2026-06-01T23:59:59Z",
+          "submissionDate": null,
+          "pointsGained": null,
+          "pointsMax": 20
+        }
+      ],
+      "leaderboard": {
+        "user-001": 12,
+        "user-002": 35,
+        "user-003": 32
+      }
+    }
+  ]
+}
+
