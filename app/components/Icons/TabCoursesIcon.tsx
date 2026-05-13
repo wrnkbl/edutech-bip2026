@@ -8,13 +8,13 @@ import Svg, {
     Rect,
     Use,
 } from "react-native-svg"
-const TabCoursesIcon = ({ color = '#f2e6b6b9', size = 55 }) => (
+const TabCoursesIcon = ({ color = '#f2e6b6b4', size = 55 }) => (
     <Svg
         preserveAspectRatio="xMidYMid meet"
         viewBox="0 0 55 55"
-        fill={color}
         width={size}
         height={size}
+        opacity={ color === '#f2e6b6b4' ? 0.7 : 1 }
     >
         <Rect width={55} height={55} fill="url(#pattern0_54_102)" />
         <Defs>
