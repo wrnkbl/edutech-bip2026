@@ -1,4 +1,4 @@
-import { Assignment, Course, User } from '../../model';
+import { Assignment, Course, Grade, User } from '../../model';
 import { UniversityAPI } from './UniversityAPI';
 import mockDataJson from '../../../../assets/mockData.json';
 
@@ -68,6 +68,23 @@ export class MockUniversityAPI extends UniversityAPI {
     }
 
     return courseData.users.map((userJson: any) => User.fromJson(userJson));
+  }
+
+  /**
+   * Returns all grades for a course.
+   * @param course The course to fetch grades from
+   */
+  async getGrades(course: Course): Promise<Grade[]> {
+    // Simulate async operation
+    await this.delay(400);
+
+    const courseData = this.mockData.courses.find((c) => c.uuid === course.uuid);
+
+    if (!courseData || !courseData.grades) {
+      return [];
+    }
+
+    return courseData.grades.map((gradeJson: any) => Grade.fromJson(gradeJson));
   }
 
   /**

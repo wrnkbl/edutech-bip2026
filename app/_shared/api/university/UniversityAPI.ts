@@ -1,4 +1,4 @@
-import { Assignment, Course, User } from '../../model';
+import { Assignment, Course, Grade, User } from '../../model';
 
 /**
  * Abstract interface for university API operations.
@@ -31,5 +31,12 @@ export abstract class UniversityAPI {
    * @returns Promise resolving to a list of users in the course
    */
   abstract getCourseUsers(course: Course): Promise<User[]>;
+
+  /**
+   * Retrieve all grades for a specific course.
+   * @param course The course to fetch grades for
+   * @returns Promise resolving to a list of grades in the course
+   */
+  abstract getGrades(course: Course): Promise<Grade[]>;
 }
 
