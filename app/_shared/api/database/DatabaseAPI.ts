@@ -1,4 +1,6 @@
 
+import { Store } from '../../model';
+
 /**
  * Abstract database API for storing/fetching user points and similar persistent data.
  */
@@ -24,5 +26,15 @@ export abstract class DatabaseAPI {
    * @param assignmentUuid Assignment UUID
    */
   abstract getAssignmentPointsMax(assignmentUuid: string): Promise<number>;
+
+  /**
+   * Get total stored points for the currently authorized user across all courses.
+   */
+  abstract getUserPoints(): Promise<number>;
+
+  /**
+   * Get the Store data for the currently authorized user.
+   */
+  abstract getStore(): Promise<Store | null>;
 }
 

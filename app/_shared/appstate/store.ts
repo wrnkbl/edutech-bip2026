@@ -1,6 +1,6 @@
 import { UniversityAPI, MockUniversityAPI } from '../api/university';
 import { DatabaseAPI, MockDatabaseAPI } from '../api/database';
-import { Assignment, Course, User } from '../model';
+import { Assignment, Course, Store, User } from '../model';
 
 // Resolve the zustand `create` factory robustly at runtime.
 // Metro / bundlers can export the package in different shapes (function, { create }, { default }).
@@ -25,6 +25,8 @@ export interface AppStateStore {
   api: UniversityAPI | null;
   db: DatabaseAPI | null;
   user: User | null;
+  userPoints: number;
+  store: Store | null;
   courses: Course[];
   allAssignments: Record<string, Assignment[]>; // courseUuid -> assignments
   courseUsers: Record<string, User[]>; // courseUuid -> users
@@ -44,6 +46,8 @@ export const useAppState: any = createFn((set: any, get: any) => ({
   api: null,
   db: null,
   user: null,
+  userPoints: 0,
+  store: null,
   courses: [],
   allAssignments: {},
   courseUsers: {},
@@ -169,7 +173,23 @@ export const useAppState: any = createFn((set: any, get: any) => ({
         courseUsers[course.uuid] = ur ? ur.users : [];
       }
 
-      set({ courses, allAssignments, courseUsers, isLoading: false });
+      // fetch user-level data from DB if available
+      let userPoints = 0;
+      let storeObj: Store | null = null;
+      if (db) {
+        userPoints = await db.getUserPoints();
+        const s = await db.getStore();
+        if (s) {
+          // s is expected to be StoreJson
+          try {
+            storeObj = Store.fromJson(s);
+          } catch (e) {
+            storeObj = null;
+          }
+        }
+      }
+
+      set({ courses, allAssignments, courseUsers, userPoints, store: storeObj, isLoading: false });
     } catch (err: any) {
       set({ error: err?.message ?? String(err), isLoading: false });
     }
@@ -178,7 +198,10 @@ export const useAppState: any = createFn((set: any, get: any) => ({
   clear() {
     set({
       api: null,
+      db: null,
       user: null,
+      userPoints: 0,
+      store: null,
       courses: [],
       allAssignments: {},
       courseUsers: {},

@@ -1,4 +1,5 @@
 import { DatabaseAPI } from './DatabaseAPI';
+import { Store } from '../../model';
 // Require JSON at runtime for maximum bundler compatibility
 const mockDbJson: any = require('../../../../assets/mockDBData.json');
 
@@ -9,6 +10,8 @@ export class MockDatabaseAPI extends DatabaseAPI {
   private data = mockDbJson as {
     points: Record<string, Record<string, number>>; // courseUuid -> userUuid -> points
     assignmentPoints?: Record<string, number>;
+    currentUser?: string;
+    userStores?: Record<string, any>;
   };
 
   async getUserPointsInCourse(userUuid: string, courseUuid: string): Promise<number> {
@@ -33,6 +36,33 @@ export class MockDatabaseAPI extends DatabaseAPI {
 
     const points = this.data.assignmentPoints?.[assignmentUuid];
     return typeof points === 'number' && Number.isFinite(points) ? points : 0;
+  }
+
+  async getUserPoints(): Promise<number> {
+    await new Promise((r) => setTimeout(r, 100));
+    const user = this.data.currentUser;
+    if (!user) return 0;
+
+    let total = 0;
+    for (const courseUuid of Object.keys(this.data.points || {})) {
+      const course = this.data.points[courseUuid];
+      const v = course[user];
+      if (typeof v === 'number' && Number.isFinite(v)) total += v;
+    }
+    return total;
+  }
+
+  async getStore(): Promise<Store | null> {
+    await new Promise((r) => setTimeout(r, 100));
+    const user = this.data.currentUser;
+    if (!user) return null;
+    const s = this.data.userStores?.[user];
+    if (!s) return null;
+    try {
+      return Store.fromJson(s);
+    } catch (e) {
+      return null;
+    }
   }
 }
 

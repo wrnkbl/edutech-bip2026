@@ -6,17 +6,70 @@
       "550e8400-e29b-41d4-a716-446655440002": 20
     },
     "f47ac10b-58cc-4372-a567-0e02b2c3d480": {
+      "550e8400-e29b-41d4-a716-446655440000": 12,
+      "550e8400-e29b-41d4-a716-446655440001": 35,
+      "550e8400-e29b-41d4-a716-446655440002": 32
+    }
+  },
   "assignmentPoints": {
     "6ba7b810-9dad-11d1-80b4-00c04fd430c8": 10,
     "6ba7b811-9dad-11d1-80b4-00c04fd430c8": 15,
     "6ba7b812-9dad-11d1-80b4-00c04fd430c8": 20,
     "6ba7b813-9dad-11d1-80b4-00c04fd430c8": 15,
     "6ba7b814-9dad-11d1-80b4-00c04fd430c8": 20
-  }
-      "550e8400-e29b-41d4-a716-446655440000": 12,
-      "550e8400-e29b-41d4-a716-446655440001": 35,
-      "550e8400-e29b-41d4-a716-446655440002": 32
+  },
+  "currentUser": "550e8400-e29b-41d4-a716-446655440000",
+  "userStores": {
+    "550e8400-e29b-41d4-a716-446655440000": {
+      "uuid": "store-001",
+      "vendors": [
+        {
+          "uuid": "vendor-001",
+          "name": "Campus Cafe",
+          "items": [
+            {
+              "uuid": "item-001",
+              "name": "Coffee Voucher",
+              "description": "Redeem for one coffee",
+              "pointsCost": 50,
+              "reclaimable": false,
+              "reclaimCooldown": 0,
+              "image": "https://example.com/coffee.png"
+            },
+            {
+              "uuid": "item-002",
+              "name": "Notebook",
+              "description": "University-branded notebook",
+              "pointsCost": 150,
+              "reclaimable": true,
+              "reclaimCooldown": 86400,
+              "image": "https://example.com/notebook.png"
+            }
+          ]
+        }
+      ],
+      "claimedItems": {}
+    },
+    "550e8400-e29b-41d4-a716-446655440001": {
+      "uuid": "store-002",
+      "vendors": [
+        {
+          "uuid": "vendor-002",
+          "name": "Campus Bookshop",
+          "items": [
+            {
+              "uuid": "item-003",
+              "name": "Course Textbook Discount",
+              "description": "10% off textbooks",
+              "pointsCost": 300,
+              "reclaimable": false,
+              "reclaimCooldown": 0,
+              "image": "https://example.com/book.png"
+            }
+          ]
+        }
+      ],
+      "claimedItems": {}
     }
   }
 }
-
