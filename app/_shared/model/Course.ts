@@ -7,7 +7,10 @@ export interface CourseInit {
   description?: string;
   assignments?: (Assignment | AssignmentInit | AssignmentJson)[];
   leaderboard?: Record<string, number | null | undefined>;
+  pointsGained?: number | null;
+  pointsMax?: number;
 }
+
 
 export interface CourseJson {
   uuid: string;
@@ -15,6 +18,8 @@ export interface CourseJson {
   description: string;
   assignments: AssignmentJson[];
   leaderboard: Record<string, number>;
+  pointsGained?: number;
+  pointsMax?: number;
 }
 
 export class Course {
@@ -27,6 +32,8 @@ export class Course {
   assignments: Assignment[];
 
   leaderboard: Record<string, number>;
+  pointsGained: number | null;
+  pointsMax: number;
 
   constructor({
     uuid = createUuid(),
@@ -34,6 +41,8 @@ export class Course {
     description = '',
     assignments = [],
     leaderboard = {},
+    pointsGained = null,
+    pointsMax = 0,
   }: CourseInit = {}) {
     this.uuid = uuid;
     this.name = name;
@@ -42,6 +51,8 @@ export class Course {
       assignment instanceof Assignment ? assignment : new Assignment(assignment),
     );
     this.leaderboard = cloneNumberRecord(leaderboard);
+    this.pointsGained = pointsGained ?? null;
+    this.pointsMax = pointsMax ?? 0;
   }
 
   getMaxPoints(): number {
@@ -55,6 +66,8 @@ export class Course {
       description: json.description,
       assignments: json.assignments.map((assignment) => Assignment.fromJson(assignment)),
       leaderboard: json.leaderboard,
+      pointsGained: json.pointsGained,
+      pointsMax: json.pointsMax,
     });
   }
 
@@ -65,6 +78,8 @@ export class Course {
       description: this.description,
       assignments: this.assignments.map((assignment) => assignment.toJson()),
       leaderboard: cloneNumberRecord(this.leaderboard),
+      pointsGained: this.pointsGained ?? undefined,
+      pointsMax: this.pointsMax,
     };
   }
 }

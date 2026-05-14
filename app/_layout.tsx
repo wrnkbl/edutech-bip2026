@@ -7,8 +7,7 @@ export default function RootLayout() {
   const init = useAppState((s: any) => s.init);
 
   useEffect(() => {
-    const api = new MockUniversityAPI();
-    init(api);
+    init();
 
     // Optionally auto-authenticate and fetch all data on startup
     (async () => {
