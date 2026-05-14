@@ -1,5 +1,6 @@
 import { DatabaseAPI } from './DatabaseAPI';
 import { Store } from '../../model';
+import { createUuid } from '../../model/utils';
 // Require JSON at runtime for maximum bundler compatibility
 const mockDbJson: any = require('../../../../assets/mockDBData.json');
 
@@ -7,13 +8,19 @@ const mockDbJson: any = require('../../../../assets/mockDBData.json');
  * Mock implementation of DatabaseAPI. Reads from static JSON and does not persist writes.
  */
 export class MockDatabaseAPI extends DatabaseAPI {
-  private data = mockDbJson as {
+  private data: {
     points: Record<string, Record<string, number>>; // courseUuid -> userUuid -> points
     assignmentPoints?: Record<string, number>;
     currentUser?: string;
     userPoints?: Record<string, number>;
     userStores?: Record<string, any>;
   };
+
+  constructor() {
+    super();
+    // Keep tests/debug deterministic: each init() starts from clean mock JSON.
+    this.data = JSON.parse(JSON.stringify(mockDbJson));
+  }
 
   async getUserPointsInCourse(userUuid: string, courseUuid: string): Promise<number> {
     // simulate delay
@@ -66,25 +73,44 @@ export class MockDatabaseAPI extends DatabaseAPI {
     if (!s) return null;
     try {
       return Store.fromJson(s);
-    } catch (e) {
+    } catch {
       return null;
     }
   }
 
-  async claimItem(itemUuid: string, userUuid: string, timestamp: Date): Promise<boolean> {
+  async claimItem(itemUuid: string, userUuid: string, timestamp: Date): Promise<string | null> {
     await new Promise((r) => setTimeout(r, 100));
 
     const storeJson = this.data.userStores?.[userUuid];
-    if (!storeJson) return false;
+    if (!storeJson) return null;
 
     const store = Store.fromJson(storeJson);
     const item = store.vendors.flatMap((vendor) => vendor.items).find((i) => i.uuid === itemUuid);
-    if (!item) return false;
+    if (!item) return null;
 
-    if (store.claimedItems[itemUuid]) return false;
+    // Check reclaim cooldown if item was claimed before
+    const claimedItemsArray = Object.values(store.claimedItems).filter(
+      (claim: any) => claim.itemUuid === itemUuid,
+    );
+    
+    if (claimedItemsArray.length > 0) {
+      // Get the most recent claim
+      const lastClaim = claimedItemsArray.reduce((latest: any, current: any) => {
+        const currentTime = current.timestamp instanceof Date ? current.timestamp.getTime() : new Date(current.timestamp).getTime();
+        const latestTime = latest.timestamp instanceof Date ? latest.timestamp.getTime() : new Date(latest.timestamp).getTime();
+        return currentTime > latestTime ? current : latest;
+      });
+
+      const lastClaimedTime = lastClaim.timestamp instanceof Date ? lastClaim.timestamp.getTime() : new Date(lastClaim.timestamp).getTime();
+      const timeSinceLastClaim = timestamp.getTime() - lastClaimedTime;
+      const cooldownMs = item.reclaimCooldown * 1000;
+      if (timeSinceLastClaim < cooldownMs) {
+        return null; // Still in cooldown
+      }
+    }
 
     const currentPoints = this.data.userPoints?.[userUuid] ?? 0;
-    if (currentPoints < item.pointsCost) return false;
+    if (currentPoints < item.pointsCost) return null;
 
     if (!this.data.userPoints) {
       this.data.userPoints = {};
@@ -95,12 +121,17 @@ export class MockDatabaseAPI extends DatabaseAPI {
     if (!userStores[userUuid]) {
       userStores[userUuid] = store.toJson();
     }
+    
+    const claimUuid = createUuid();
     userStores[userUuid].claimedItems = {
       ...(userStores[userUuid].claimedItems || {}),
-      [itemUuid]: timestamp.toISOString(),
+      [claimUuid]: {
+        itemUuid,
+        timestamp: timestamp.toISOString(),
+      },
     };
 
-    return true;
+    return claimUuid;
   }
 }
 

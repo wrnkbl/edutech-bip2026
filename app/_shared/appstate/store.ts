@@ -21,6 +21,7 @@ export interface AppStateStore {
   init(): void;
   authenticate(): Promise<boolean>;
   fetchAllData(): Promise<void>;
+  getClaimedItems(): { item: StoreItem; claimedAt: Date }[];
   claimItem(itemUuid: string): Promise<void>;
   clear(): void;
 }
@@ -172,6 +173,34 @@ export const useAppState: any = create((set: any, get: any) => ({
     }
   },
 
+  getClaimedItems() {
+    const store = get().store;
+    if (!store) {
+      return [];
+    }
+
+    const now = Date.now();
+    const fifteenMinutesMs = 15 * 60 * 1000;
+
+    return (Object.entries(store.claimedItems) as Array<[string, any]>)
+      .map(([claimUuid, claimRecord]) => {
+        const item = store.vendors
+          .flatMap((vendor: StoreVendor) => vendor.items)
+          .find((candidate: StoreItem) => candidate.uuid === claimRecord.itemUuid);
+
+        return item ? { claimUuid, item, claimedAt: claimRecord.timestamp } : null;
+      })
+      .filter((entry): entry is { claimUuid: string; item: StoreItem; claimedAt: Date } => {
+        if (!entry) {
+          return false;
+        }
+
+        const age = now - entry.claimedAt.getTime();
+        return age >= 0 && age <= fifteenMinutesMs;
+      })
+      .sort((a, b) => b.claimedAt.getTime() - a.claimedAt.getTime());
+  },
+
   async claimItem(itemUuid: string) {
     if (!get().api || !get().db) {
       get().init();
@@ -200,9 +229,22 @@ export const useAppState: any = create((set: any, get: any) => ({
       throw new Error(`Item not found: ${itemUuid}`);
     }
 
+    // Check if item was claimed recently and is still in cooldown
+    const claimedItems = get().getClaimedItems();
+    const recentClaim = claimedItems.find((c: any) => c.item.uuid === itemUuid);
+    if (recentClaim) {
+      const timeSinceLastClaim = Date.now() - recentClaim.claimedAt.getTime();
+      const cooldownMs = recentClaim.item.reclaimCooldown * 1000;
+      if (timeSinceLastClaim < cooldownMs) {
+        throw new Error(
+          `Item still in reclaim cooldown. Try again in ${Math.ceil((cooldownMs - timeSinceLastClaim) / 1000)} seconds.`,
+        );
+      }
+    }
+
     const timestamp = new Date();
-    const ok = await db.claimItem(itemUuid, user.uuid, timestamp);
-    if (!ok) {
+    const claimUuid = await db.claimItem(itemUuid, user.uuid, timestamp);
+    if (!claimUuid) {
       throw new Error(`Unable to claim item: ${itemUuid}`);
     }
 
@@ -212,7 +254,7 @@ export const useAppState: any = create((set: any, get: any) => ({
       vendors: store.vendors,
       claimedItems: {
         ...store.claimedItems,
-        [itemUuid]: timestamp,
+        [claimUuid]: { itemUuid, timestamp },
       },
     });
 

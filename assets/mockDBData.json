@@ -20,7 +20,7 @@
   },
   "currentUser": "550e8400-e29b-41d4-a716-446655440000",
   "userPoints": {
-    "550e8400-e29b-41d4-a716-446655440000": 30,
+    "550e8400-e29b-41d4-a716-446655440000": 200,
     "550e8400-e29b-41d4-a716-446655440001": 60,
     "550e8400-e29b-41d4-a716-446655440002": 52
   },
@@ -31,26 +31,26 @@
         {
           "uuid": "vendor-001",
           "name": "Campus Cafe",
-          "items": [
-            {
-              "uuid": "item-001",
-              "name": "Coffee Voucher",
-              "description": "Redeem for one coffee",
-              "pointsCost": 10,
-              "reclaimable": false,
-              "reclaimCooldown": 0,
-              "image": "https://example.com/coffee.png"
-            },
-            {
-              "uuid": "item-002",
-              "name": "Notebook",
-              "description": "University-branded notebook",
-              "pointsCost": 150,
-              "reclaimable": true,
-              "reclaimCooldown": 86400,
-              "image": "https://example.com/notebook.png"
-            }
-          ]
+           "items": [
+             {
+               "uuid": "item-001",
+               "name": "Coffee Voucher",
+               "description": "Redeem for one coffee",
+               "pointsCost": 5,
+               "reclaimable": false,
+               "reclaimCooldown": 0,
+               "image": "https://example.com/coffee.png"
+             },
+             {
+               "uuid": "item-002",
+               "name": "Pen with Cooldown",
+               "description": "Fancy university pen (claimable again after 60s)",
+               "pointsCost": 10,
+               "reclaimable": true,
+               "reclaimCooldown": 60,
+               "image": "https://example.com/pen.png"
+             }
+           ]
         }
       ],
       "claimedItems": {}

@@ -39,8 +39,8 @@ export abstract class DatabaseAPI {
 
   /**
    * Claim an item for a user at the given timestamp.
-   * Returns false if the claim cannot be completed.
+   * Returns a claim UUID if successful, null otherwise.
    */
-  abstract claimItem(itemUuid: string, userUuid: string, timestamp: Date): Promise<boolean>;
+  abstract claimItem(itemUuid: string, userUuid: string, timestamp: Date): Promise<string | null>;
 }
 

@@ -1,16 +1,26 @@
 import { StoreVendor, type StoreVendorInit, type StoreVendorJson } from './StoreVendor';
-import { cloneDateRecord, createUuid, dateRecordToJson } from './utils';
+import { createUuid } from './utils';
+
+export interface ClaimedItemRecord {
+  itemUuid: string;
+  timestamp: Date;
+}
+
+export interface ClaimedItemRecordJson {
+  itemUuid: string;
+  timestamp: string;
+}
 
 export interface StoreInit {
   uuid?: string;
   vendors?: (StoreVendor | StoreVendorInit | StoreVendorJson)[];
-  claimedItems?: Record<string, string | Date | null | undefined>;
+  claimedItems?: Record<string, ClaimedItemRecord | ClaimedItemRecordJson | { itemUuid: string; timestamp: string | Date }>;
 }
 
 export interface StoreJson {
   uuid: string;
   vendors: StoreVendorJson[];
-  claimedItems: Record<string, string>;
+  claimedItems: Record<string, ClaimedItemRecordJson>;
 }
 
 export class Store {
@@ -18,7 +28,7 @@ export class Store {
 
   vendors: StoreVendor[];
 
-  claimedItems: Record<string, Date>;
+  claimedItems: Record<string, ClaimedItemRecord>;
 
   constructor({
     uuid = createUuid(),
@@ -29,7 +39,20 @@ export class Store {
     this.vendors = vendors.map((vendor) =>
       vendor instanceof StoreVendor ? vendor : new StoreVendor(vendor),
     );
-    this.claimedItems = cloneDateRecord(claimedItems);
+    this.claimedItems = this.normalizeClaimedItems(claimedItems);
+  }
+
+  private normalizeClaimedItems(items: Record<string, any>): Record<string, ClaimedItemRecord> {
+    const result: Record<string, ClaimedItemRecord> = {};
+    for (const [key, value] of Object.entries(items)) {
+      if (value && typeof value === 'object') {
+        result[key] = {
+          itemUuid: value.itemUuid,
+          timestamp: value.timestamp instanceof Date ? value.timestamp : new Date(value.timestamp),
+        };
+      }
+    }
+    return result;
   }
 
   static fromJson(json: StoreJson): Store {
@@ -41,10 +64,17 @@ export class Store {
   }
 
   toJson(): StoreJson {
+    const claimedItemsJson: Record<string, ClaimedItemRecordJson> = {};
+    for (const [key, value] of Object.entries(this.claimedItems)) {
+      claimedItemsJson[key] = {
+        itemUuid: value.itemUuid,
+        timestamp: value.timestamp.toISOString(),
+      };
+    }
     return {
       uuid: this.uuid,
       vendors: this.vendors.map((vendor) => vendor.toJson()),
-      claimedItems: dateRecordToJson(this.claimedItems),
+      claimedItems: claimedItemsJson,
     };
   }
 }
