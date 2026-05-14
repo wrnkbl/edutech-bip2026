@@ -36,5 +36,11 @@ export abstract class DatabaseAPI {
    * Get the Store data for the currently authorized user.
    */
   abstract getStore(): Promise<Store | null>;
+
+  /**
+   * Claim an item for a user at the given timestamp.
+   * Returns false if the claim cannot be completed.
+   */
+  abstract claimItem(itemUuid: string, userUuid: string, timestamp: Date): Promise<boolean>;
 }
 

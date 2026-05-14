@@ -1,25 +1,7 @@
+import { create } from 'zustand';
 import { UniversityAPI, MockUniversityAPI } from '../api/university';
 import { DatabaseAPI, MockDatabaseAPI } from '../api/database';
-import { Assignment, Course, Store, User } from '../model';
-
-// Resolve the zustand `create` factory robustly at runtime.
-// Metro / bundlers can export the package in different shapes (function, { create }, { default }).
-// Check common cases and pick the actual function; if none match, throw a clear error.
-const _zustand_mod: any = require('zustand');
-let createFn: any;
-if (typeof _zustand_mod === 'function') {
-  createFn = _zustand_mod;
-} else if (_zustand_mod && typeof _zustand_mod.create === 'function') {
-  createFn = _zustand_mod.create;
-} else if (_zustand_mod && typeof _zustand_mod.default === 'function') {
-  createFn = _zustand_mod.default;
-} else {
-  // Provide detailed diagnostics to help debugging in the bundler environment
-  const shape = Object.keys(_zustand_mod || {}).join(', ');
-  throw new Error(
-    `Unable to resolve zustand create function. Module keys: [${shape}]`,
-  );
-}
+import { Assignment, Course, Store, StoreItem, StoreVendor, User } from '../model';
 
 export interface AppStateStore {
   api: UniversityAPI | null;
@@ -39,10 +21,11 @@ export interface AppStateStore {
   init(): void;
   authenticate(): Promise<boolean>;
   fetchAllData(): Promise<void>;
+  claimItem(itemUuid: string): Promise<void>;
   clear(): void;
 }
 
-export const useAppState: any = createFn((set: any, get: any) => ({
+export const useAppState: any = create((set: any, get: any) => ({
   api: null,
   db: null,
   user: null,
@@ -146,8 +129,7 @@ export const useAppState: any = createFn((set: any, get: any) => ({
         for (const grade of grades) {
           const a = assignments.find((x: Assignment) => x.uuid === grade.assignmentId);
           if (!a) continue;
-          const pts = (grade.percentage() || 0) * (a.pointsMax || 0);
-          a.pointsGained = pts;
+          a.pointsGained = (grade.percentage() || 0) * (a.pointsMax || 0);
         }
 
         // calculated total points for the course (from assignments)
@@ -180,12 +162,7 @@ export const useAppState: any = createFn((set: any, get: any) => ({
         userPoints = await db.getUserPoints();
         const s = await db.getStore();
         if (s) {
-          // s is expected to be StoreJson
-          try {
-            storeObj = Store.fromJson(s);
-          } catch (e) {
-            storeObj = null;
-          }
+          storeObj = s;
         }
       }
 
@@ -193,6 +170,53 @@ export const useAppState: any = createFn((set: any, get: any) => ({
     } catch (err: any) {
       set({ error: err?.message ?? String(err), isLoading: false });
     }
+  },
+
+  async claimItem(itemUuid: string) {
+    if (!get().api || !get().db) {
+      get().init();
+    }
+
+    if (!get().user) {
+      const ok = await get().authenticate();
+      if (!ok) {
+        throw new Error('User not authenticated');
+      }
+    }
+
+    const db = get().db;
+    const user = get().user;
+    const store = get().store;
+
+    if (!db || !user || !store) {
+      throw new Error('Store not loaded');
+    }
+
+    const item = store.vendors
+      .flatMap((vendor: StoreVendor) => vendor.items)
+      .find((candidate: StoreItem) => candidate.uuid === itemUuid);
+
+    if (!item) {
+      throw new Error(`Item not found: ${itemUuid}`);
+    }
+
+    const timestamp = new Date();
+    const ok = await db.claimItem(itemUuid, user.uuid, timestamp);
+    if (!ok) {
+      throw new Error(`Unable to claim item: ${itemUuid}`);
+    }
+
+    const nextUserPoints = Math.max(0, get().userPoints - item.pointsCost);
+    const nextStore = new Store({
+      uuid: store.uuid,
+      vendors: store.vendors,
+      claimedItems: {
+        ...store.claimedItems,
+        [itemUuid]: timestamp,
+      },
+    });
+
+    set({ userPoints: nextUserPoints, store: nextStore });
   },
 
   clear() {

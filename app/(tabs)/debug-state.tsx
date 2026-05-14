@@ -9,20 +9,13 @@ export default function DebugStateScreen() {
   const userPoints = useAppState((s: any) => s.userPoints);
   const store = useAppState((s: any) => s.store);
   const hasDb = useAppState((s: any) => !!s.db);
+  const claimableItem = useAppState((s: any) =>
+    s.store?.vendors
+      ?.flatMap((vendor: any) => vendor.items ?? [])
+      ?.find((item: any) => !s.store?.claimedItems?.[item.uuid] && item.pointsCost <= s.userPoints) ?? null,
+  );
 
-  const handleLoad = async () => {
-    // initialize mock API + DB via global state
-    useAppState.getState().init();
-
-    // authenticate
-    const ok = await useAppState.getState().authenticate();
-
-    // fetch all data if authenticated
-    if (ok) {
-      await useAppState.getState().fetchAllData();
-    }
-
-    // grab the snapshot and pretty-print
+  const refreshSnapshots = async () => {
     const state = useAppState.getState();
     const db = state.db;
 
@@ -61,10 +54,42 @@ export default function DebugStateScreen() {
     console.log('DB snapshot:', dbSnapshot);
   };
 
+  const handleLoad = async () => {
+    // initialize mock API + DB via global state
+    useAppState.getState().init();
+
+    // authenticate
+    const ok = await useAppState.getState().authenticate();
+
+    // fetch all data if authenticated
+    if (ok) {
+      await useAppState.getState().fetchAllData();
+    }
+
+    await refreshSnapshots();
+  };
+
+  const handleClaimFirstItem = async () => {
+    if (!claimableItem) {
+      return;
+    }
+
+    await useAppState.getState().claimItem(claimableItem.uuid);
+    await refreshSnapshots();
+  };
+
   return (
     <ScrollView contentContainerStyle={{ padding: 16 }}>
       <View style={{ marginBottom: 12 }}>
         <Button title={isLoading ? 'Loading...' : 'Init + Authenticate + Fetch All Data'} onPress={handleLoad} />
+      </View>
+
+      <View style={{ marginBottom: 12 }}>
+        <Button
+          title={claimableItem ? `Claim first store item (${claimableItem.name})` : 'No claimable item'}
+          onPress={handleClaimFirstItem}
+          disabled={!claimableItem}
+        />
       </View>
 
       <View>
@@ -77,6 +102,7 @@ export default function DebugStateScreen() {
         <Text>User points: {userPoints}</Text>
         <Text>Has DB: {String(hasDb)}</Text>
         <Text>Store vendors: {store?.vendors?.length ?? 0}</Text>
+        <Text>Claimable item: {claimableItem?.name ?? '(none)'}</Text>
       </View>
 
       <View style={{ marginTop: 16 }}>

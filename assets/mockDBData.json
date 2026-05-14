@@ -19,6 +19,11 @@
     "6ba7b814-9dad-11d1-80b4-00c04fd430c8": 20
   },
   "currentUser": "550e8400-e29b-41d4-a716-446655440000",
+  "userPoints": {
+    "550e8400-e29b-41d4-a716-446655440000": 30,
+    "550e8400-e29b-41d4-a716-446655440001": 60,
+    "550e8400-e29b-41d4-a716-446655440002": 52
+  },
   "userStores": {
     "550e8400-e29b-41d4-a716-446655440000": {
       "uuid": "store-001",
@@ -31,7 +36,7 @@
               "uuid": "item-001",
               "name": "Coffee Voucher",
               "description": "Redeem for one coffee",
-              "pointsCost": 50,
+              "pointsCost": 10,
               "reclaimable": false,
               "reclaimCooldown": 0,
               "image": "https://example.com/coffee.png"
