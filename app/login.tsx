@@ -26,12 +26,13 @@ export default function LoginScreen() {
       return;
     }
 
-    const success = await authenticate(email, password);
-    if (success) {
-      await fetchAllData();
-    } else {
-      setError("Invalid password. Please try again.");
-    }
+   const ok = await authenticate(email, password); 
+  
+  if (ok) {
+    await fetchAllData(); 
+  } else {
+    setError("Invalid password. Please try again.");
+  }
   };
 
   return (

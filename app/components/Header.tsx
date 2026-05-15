@@ -3,7 +3,7 @@ import { TitanOne_400Regular, useFonts } from '@expo-google-fonts/titan-one';
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
-
+import { useAppState } from '../_shared/appstate/store';
 
 interface HeaderProps {
   title: string;     
@@ -11,6 +11,7 @@ interface HeaderProps {
 }
 
 export default function Header({ title, searchPlaceholder }: HeaderProps) {
+const points = useAppState((s: any) => s.userPoints);
 
 
   let [fontsLoaded] = useFonts({
@@ -27,7 +28,7 @@ export default function Header({ title, searchPlaceholder }: HeaderProps) {
           
           <View style={styles.pointsBadge}>
             <Ionicons name="ribbon" size={16} color="#4E342E" />
-            <Text style={styles.pointsText}>200</Text>
+            <Text style={styles.pointsText}>{points}</Text>
           </View>
         </View>
 
