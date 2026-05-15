@@ -11,6 +11,8 @@ interface HeaderProps {
 }
 
 export default function Header({ title, searchPlaceholder }: HeaderProps) {
+
+
   let [fontsLoaded] = useFonts({
     'TitanOne': TitanOne_400Regular,
     'Capriola': Capriola_400Regular,
@@ -25,7 +27,7 @@ export default function Header({ title, searchPlaceholder }: HeaderProps) {
           
           <View style={styles.pointsBadge}>
             <Ionicons name="ribbon" size={16} color="#4E342E" />
-            <Text style={styles.pointsText}>500</Text>
+            <Text style={styles.pointsText}>200</Text>
           </View>
         </View>
 
