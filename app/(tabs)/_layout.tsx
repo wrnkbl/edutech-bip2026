@@ -47,6 +47,12 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <TabProfileIcon color={color} />,
         }}
       />
+      <Tabs.Screen
+        name="[courseView]"
+        options={{
+          href: null,
+        }}
+      />
     </Tabs>
   );
 }

@@ -8,7 +8,8 @@ import { useAppState } from '../_shared/appstate';
 import Header from '../components/Header';
 
 export default function HomeScreen() {
-  const state = useAppState.getState();
+  const state = useAppState()
+  const isReady = !state.isLoading && state.isInitialized
 
   return (
     <SafeAreaView style={styles.container}>
@@ -23,53 +24,61 @@ export default function HomeScreen() {
       >
         <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
           <View>
-            {state.courses.map((course: any) => {
-              const tasks = course.assignments.length;
-              const completedTasks = course.assignments.filter((a: { submissionDate: any; }) => a.submissionDate).length;
+            {isReady ? (
+              state.courses.map((course: any) => {
+                const tasks = course.assignments.length;
+                const completedTasks = course.assignments.filter((a: { submissionDate: any; }) => a.submissionDate).length;
 
-              const progress = course.pointsMax && course.pointsMax > 0
-                ? (course.pointsGained / course.pointsMax) * 100
-                : 0;
+                const progress = course.pointsMax && course.pointsMax > 0
+                  ? (course.pointsGained / course.pointsMax) * 100
+                  : 0;
 
-              return (
-                <Link key={course.uuid} href={`../${course.uuid}`} style={styles.link}>
-                  <View style={styles.card}>
-                    <View style={styles.cardHeader}>
-                      <Text style={styles.courseName}>{course.name}</Text>
-                      <Text style={styles.courseMeta}>
-                        {completedTasks}/{tasks} tasks completed
-                      </Text>
-                    </View>
-
-                    <View style={styles.cardBody}>
-                      <View style={styles.pointsRow}>
-                        <View style={styles.pointsLabelRow}>
-                          <PointsIcon color={'#4a2e22'} size={16} />
-                          <Text style={styles.pointsLabel}>Points</Text>
-                        </View>
-                        <Text style={styles.pointsValue}>
-                          {course.pointsGained} / {course.pointsMax}
+                return (
+                  <Link key={course.uuid} href={`../${course.uuid}`} style={styles.link}>
+                    <View style={styles.card}>
+                      <View style={styles.cardHeader}>
+                        <Text style={styles.courseName}>{course.name}</Text>
+                        <Text style={styles.courseMeta}>
+                          {completedTasks}/{tasks} tasks completed
                         </Text>
                       </View>
 
-                      <View style={styles.progressTrack}>
-                        <View style={[
-                          styles.progressFill,
-                          { width: `${Math.min(Math.max(Math.round(progress), 0), 100)}%` },
-                        ]}
-                        />
+                      <View style={styles.cardBody}>
+                        <View style={styles.pointsRow}>
+                          <View style={styles.pointsLabelRow}>
+                            <PointsIcon color={'#4a2e22'} size={16} />
+                            <Text style={styles.pointsLabel}>Points</Text>
+                          </View>
+                          <Text style={styles.pointsValue}>
+                            {course.pointsGained} / {course.pointsMax}
+                          </Text>
+                        </View>
+
+                        <View style={styles.progressTrack}>
+                          <View style={[
+                            styles.progressFill,
+                            { width: `${Math.min(Math.max(Math.round(progress), 0), 100)}%` },
+                          ]}
+                          />
+                        </View>
                       </View>
                     </View>
-                  </View>
-                </Link>
+                  </Link>
+                )
+              })) :
+              (
+                <View>
+                  <Text>Insert loading icon here</Text>
+                </View>
               )
-            })}
+            }
           </View>
         </ScrollView>
       </LinearGradient>
     </SafeAreaView>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
