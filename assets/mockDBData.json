@@ -39,7 +39,7 @@
                "pointsCost": 5,
                "reclaimable": false,
                "reclaimCooldown": 0,
-               "image": "https://example.com/coffee.png"
+               "image": "https://i.imgur.com/SBiyWOp.jpeg"
              },
              {
                "uuid": "item-002",
@@ -48,7 +48,7 @@
                "pointsCost": 10,
                "reclaimable": true,
                "reclaimCooldown": 60,
-               "image": "https://example.com/pen.png"
+               "image": "https://i.imgur.com/FgqGPIw.png"
              }
            ]
         }
@@ -69,7 +69,7 @@
               "pointsCost": 300,
               "reclaimable": false,
               "reclaimCooldown": 0,
-              "image": "https://example.com/book.png"
+              "image": "https://i.imgur.com/gQX1E8U.png"
             }
           ]
         }
