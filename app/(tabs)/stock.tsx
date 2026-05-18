@@ -2,8 +2,8 @@ import { Capriola_400Regular } from '@expo-google-fonts/capriola';
 import { TitanOne_400Regular, useFonts } from '@expo-google-fonts/titan-one';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
-import React, { useState } from 'react';
-import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Image, Modal, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useAppState } from '../_shared/appstate/store';
 import Header from '../components/Header';
 
@@ -15,6 +15,18 @@ export default function StockScreen() {
   const isInitialized = useAppState((s: any) => s.isInitialized);
   
   const [purchasingUuid, setPurchasingUuid] = useState<string | null>(null);
+  const [qrModalVisible, setQrModalVisible] = useState<boolean>(false);
+  
+  // Stan przechowujący aktualny czas do odliczania
+  const [now, setNow] = useState<number>(Date.now());
+
+  // Efekt aktualizujący czas co sekundę (potrzebny do płynnego odliczania)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   let [fontsLoaded] = useFonts({
     'TitanOne': TitanOne_400Regular,
@@ -32,7 +44,7 @@ export default function StockScreen() {
   }
 
   const allItems = store?.vendors?.flatMap((vendor: any) => vendor.items) || [];
-  const claimedRecords = store?.claimedItems ? Object.values(store.claimedItems) : [];
+  const claimedRecords: any[] = store?.claimedItems ? Object.values(store.claimedItems) : [];
   const claimedItemUuuids = claimedRecords.map((record: any) => record.itemUuid);
 
   const availableItems = allItems.filter((item: any) => {
@@ -44,18 +56,44 @@ export default function StockScreen() {
 
   const usedItems = allItems.filter((item: any) => claimedItemUuuids.includes(item.uuid));
 
-  const handleUseItem = async (itemUuid: string, pointsCost: number) => {
+ 
+  const getCooldownTimeLeft = (item: any) => {
+    if (!item.reclaimable || item.reclaimCooldown <= 0) return 0;
+
+
+    const itemClaims = claimedRecords.filter((r: any) => r.itemUuid === item.uuid);
+    if (itemClaims.length === 0) return 0;
+
+   
+    const timestamps = itemClaims.map((r: any) => new Date(r.timestamp).getTime());
+    const lastClaimTime = Math.max(...timestamps);
+
+    const timePassedMs = now - lastClaimTime;
+    const cooldownMs = item.reclaimCooldown * 1000;
+
+    if (timePassedMs < cooldownMs) {
+      return Math.ceil((cooldownMs - timePassedMs) / 1000);
+    }
+    return 0;
+  };
+
+  const handleUseItem = async (itemUuid: string, pointsCost: number, cooldownLeft: number) => {
+    if (cooldownLeft > 0) {
+      Alert.alert("Cooldown", `Please wait ${cooldownLeft}s before claiming this item again.`);
+      return;
+    }
+
     if (userPoints < pointsCost) {
-      Alert.alert("Błąd", "Nie masz wystarczającej liczby punktów, aby odebrać ten kupon!");
+      Alert.alert("Error", "You don't have enough points to claim this item!");
       return;
     }
 
     try {
       setPurchasingUuid(itemUuid);
       await claimItem(itemUuid);
-      Alert.alert("Sukces!", "Kupon został pomyślnie aktywowany i dodany do Twojego konta.");
+      setQrModalVisible(true);
     } catch (error: any) {
-      Alert.alert("Błąd", error?.message || "Nie udało się zrealizować kuponu.");
+      Alert.alert("Error", error?.message || "Failed to claim the item.");
     } finally {
       setPurchasingUuid(null);
     }
@@ -70,39 +108,46 @@ export default function StockScreen() {
         style={styles.content}
       >
         <ScrollView style={styles.scrollView} contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
-          {availableItems.map((item: any) => (
-            <View key={item.uuid} style={styles.card}>
-              <View style={styles.logoContainer}>
-                {item.image ? (
-                  <Image source={{ uri: item.image }} style={styles.itemImage} resizeMode="contain" />
-                ) : (
-                  <Ionicons name="gift" size={32} color="#4A2E22" />
-                )}
-              </View>
-              
-              <View style={styles.detailsContainer}>
-                <Text style={styles.itemTitle}>{item.name}</Text>
-                <Text style={styles.itemDescription}>{item.description}</Text>
-                <View style={styles.priceRow}>
-                  <Text style={styles.priceLabel}>Price: </Text>
-                  <Text style={styles.priceValue}>{item.pointsCost} </Text>
-                  <Ionicons name="ribbon" size={14} color="#93B5C6" />
-                </View>
-              </View>
+          {availableItems.map((item: any) => {
+            const cooldownLeft = getCooldownTimeLeft(item);
+            const isInCooldown = cooldownLeft > 0;
 
-              <TouchableOpacity 
-                style={styles.useButton}
-                onPress={() => handleUseItem(item.uuid, item.pointsCost)}
-                disabled={purchasingUuid !== null}
-              >
-                {purchasingUuid === item.uuid ? (
-                  <ActivityIndicator size="small" color="#F2E6B6" />
-                ) : (
-                  <Text style={styles.useButtonText}>Use</Text>
-                )}
-              </TouchableOpacity>
-            </View>
-          ))}
+            return (
+              <View key={item.uuid} style={[styles.card, isInCooldown && styles.cooldownCard]}>
+                <View style={styles.logoContainer}>
+                  {item.image ? (
+                    <Image source={{ uri: item.image }} style={[styles.itemImage, isInCooldown && styles.cooldownImage]} resizeMode="contain" />
+                  ) : (
+                    <Ionicons name="gift" size={32} color="#4A2E22" />
+                  )}
+                </View>
+                
+                <View style={styles.detailsContainer}>
+                  <Text style={[styles.itemTitle, isInCooldown && styles.cooldownText]}>{item.name}</Text>
+                  <Text style={[styles.itemDescription, isInCooldown && styles.cooldownText]}>{item.description}</Text>
+                  <View style={styles.priceRow}>
+                    <Text style={[styles.priceLabel, isInCooldown && styles.cooldownText]}>Price: </Text>
+                    <Text style={[styles.priceValue, isInCooldown && styles.cooldownText]}>{item.pointsCost} </Text>
+                    <Ionicons name="ribbon" size={14} color={isInCooldown ? "rgba(74, 46, 34, 0.4)" : "#93B5C6"} />
+                  </View>
+                </View>
+
+                <TouchableOpacity 
+                  style={[styles.useButton, isInCooldown && styles.cooldownButton]}
+                  onPress={() => handleUseItem(item.uuid, item.pointsCost, cooldownLeft)}
+                  disabled={purchasingUuid !== null}
+                >
+                  {purchasingUuid === item.uuid ? (
+                    <ActivityIndicator size="small" color="#F2E6B6" />
+                  ) : isInCooldown ? (
+                    <Text style={styles.useButtonText}>{cooldownLeft}s</Text>
+                  ) : (
+                    <Text style={styles.useButtonText}>Use</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
+            );
+          })}
 
           {usedItems.length > 0 && (
             <>
@@ -141,6 +186,29 @@ export default function StockScreen() {
           )}
         </ScrollView>
       </LinearGradient>
+
+      <Modal
+        animationType="fade"
+        transparent={true}
+        visible={qrModalVisible}
+        onRequestClose={() => setQrModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.popupBox}>
+            <Image 
+              source={require('../../assets/images/qr.png')} 
+              style={styles.qrCodeImage}
+              resizeMode="contain"
+            />
+            <TouchableOpacity 
+              style={styles.closeButton} 
+              onPress={() => setQrModalVisible(false)}
+            >
+              <Ionicons name="close" size={28} color="#f2e6b6" />
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -186,6 +254,9 @@ const styles = StyleSheet.create({
   usedCard: {
     opacity: 0.6,
   },
+  cooldownCard: {
+    opacity: 0.7,
+  },
   logoContainer: {
     width: 70,
     height: 70,
@@ -204,6 +275,9 @@ const styles = StyleSheet.create({
   },
   usedImage: {
     opacity: 0.4,
+  },
+  cooldownImage: {
+    opacity: 0.3,
   },
   detailsContainer: {
     flex: 1,
@@ -244,10 +318,14 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     justifyContent: 'center',
     alignItems: 'center',
+    minWidth: 70,
   },
   usedButton: {
     backgroundColor: '#A8BDC7',
     opacity: 0.5,
+  },
+  cooldownButton: {
+    backgroundColor: '#A8BDC7',
   },
   useButtonText: {
     fontFamily: 'TitanOne',
@@ -256,6 +334,9 @@ const styles = StyleSheet.create({
   },
   usedText: {
     color: 'rgba(74, 46, 34, 0.6)',
+  },
+  cooldownText: {
+    color: 'rgba(74, 46, 34, 0.5)',
   },
   dividerRow: {
     flexDirection: 'row',
@@ -275,5 +356,45 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     letterSpacing: 1,
     opacity: 1,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  popupBox: {
+    width: 280,
+    height: 280,
+    backgroundColor: '#93B5C6',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+    position: 'relative',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 10,
+  },
+  qrCodeImage: {
+    width: 200,
+    height: 200,
+  },
+  closeButton: {
+    position: 'absolute',
+    bottom: -60,
+    width: 48,
+    height: 48,
+    borderRadius: 15,
+    backgroundColor: '#4A2E22',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 4,
+    elevation: 4,
   },
 });
