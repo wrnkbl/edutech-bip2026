@@ -66,7 +66,7 @@ export default function CourseDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title={'course info'}
+        title={'Course'}
         searchPlaceholder={`${activeTab}...`}
         onSearchChange={(text) => setSearchQuery(text)}
       />
