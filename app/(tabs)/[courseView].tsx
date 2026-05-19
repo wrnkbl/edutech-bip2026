@@ -154,9 +154,6 @@ export default function CourseDetailScreen() {
 
                       const isPastDue = new Date(task.dueDate).getTime() < Date.now() && !isCompleted;
 
-                      console.log('task.pointsGained', task.pointsGained)
-                      console.log('task.pointsMax', task.pointsMax)
-
                       return (
                         <View
                           key={task.uuid}
@@ -195,8 +192,8 @@ export default function CourseDetailScreen() {
                             </View>
 
                             <View style={styles.pointsContainer}>
-                              <Text style={styles.pointsLabel}>Points</Text>
-                              <Text style={styles.pointsValue}>{task.pointsGained ?? 0}/{task.pointsMax}</Text>
+                              <Text style={styles.taskPointsLabel}>Points</Text>
+                              <Text style={styles.taskPointsValue}>{task.pointsGained ?? 0}/{task.pointsMax}</Text>
                             </View>
                           </View>
 
@@ -368,6 +365,18 @@ const styles = StyleSheet.create({
   },
   pointsValue: {
     color: '#f2e6b6',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  taskPointsLabel: {
+    color: '#4a2e22',
+    fontFamily: 'Capriola',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  taskPointsValue: {
+    color: '#4a2e22',
     fontSize: 14,
     fontWeight: '700',
   },
