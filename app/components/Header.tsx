@@ -8,17 +8,19 @@ import { useAppState } from '../_shared/appstate/store';
 interface HeaderProps {
   title: string;     
   searchPlaceholder: string; 
+  onSearchChange?: (text: string) => void; 
 }
 
-export default function Header({ title, searchPlaceholder }: HeaderProps) {
-const points = useAppState((s: any) => s.userPoints);
-
+export default function Header({ title, searchPlaceholder, onSearchChange }: HeaderProps) {
+  const points = useAppState((s: any) => s.userPoints);
 
   let [fontsLoaded] = useFonts({
     'TitanOne': TitanOne_400Regular,
     'Capriola': Capriola_400Regular,
   });
+
   if (!fontsLoaded) return null;
+
   return (
     <View style={styles.headerBackground}>
       <View style={styles.contentContainer}>
@@ -38,6 +40,9 @@ const points = useAppState((s: any) => s.userPoints);
             style={styles.searchInput}
             placeholder={`Search ${searchPlaceholder}`}
             placeholderTextColor="#8D8471"
+            onChangeText={onSearchChange} 
+            autoCapitalize="none"
+            autoCorrect={false}
           />
         </View>
       </View>

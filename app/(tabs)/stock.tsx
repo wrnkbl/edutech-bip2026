@@ -16,11 +16,9 @@ export default function StockScreen() {
   
   const [purchasingUuid, setPurchasingUuid] = useState<string | null>(null);
   const [qrModalVisible, setQrModalVisible] = useState<boolean>(false);
-  
-  // Stan przechowujący aktualny czas do odliczania
+  const [searchQuery, setSearchQuery] = useState<string>('');
   const [now, setNow] = useState<number>(Date.now());
 
-  // Efekt aktualizujący czas co sekundę (potrzebny do płynnego odliczania)
   useEffect(() => {
     const interval = setInterval(() => {
       setNow(Date.now());
@@ -51,19 +49,29 @@ export default function StockScreen() {
     if (!item.reclaimable && claimedItemUuuids.includes(item.uuid)) {
       return false;
     }
-    return true;
+    
+    const matchesSearch = 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+
+    return matchesSearch;
   });
 
-  const usedItems = allItems.filter((item: any) => claimedItemUuuids.includes(item.uuid));
+  const usedItems = allItems.filter((item: any) => {
+    const isClaimed = claimedItemUuuids.includes(item.uuid);
+    
+    const matchesSearch = 
+      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      item.description.toLowerCase().includes(searchQuery.toLowerCase());
 
- 
+    return isClaimed && matchesSearch;
+  });
+
   const getCooldownTimeLeft = (item: any) => {
     if (!item.reclaimable || item.reclaimCooldown <= 0) return 0;
 
-
     const itemClaims = claimedRecords.filter((r: any) => r.itemUuid === item.uuid);
     if (itemClaims.length === 0) return 0;
-
    
     const timestamps = itemClaims.map((r: any) => new Date(r.timestamp).getTime());
     const lastClaimTime = Math.max(...timestamps);
@@ -101,7 +109,11 @@ export default function StockScreen() {
 
   return (
     <View style={styles.mainContainer}>
-      <Header title="Stock" searchPlaceholder="items..." />
+      <Header 
+        title="Stock" 
+        searchPlaceholder="items..." 
+        onSearchChange={(text) => setSearchQuery(text)} 
+      />
       
       <LinearGradient
         colors={['#93B5C6', '#F2E6B6']}
