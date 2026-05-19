@@ -31,17 +31,15 @@ export default function CourseDetailScreen() {
   const { courseView, tab } = useLocalSearchParams<{ courseView?: string; tab?: string }>();
   // courseView == course.uuid
   const [activeTab, setActiveTab] = useState<'tasks' | 'leaderboard'>(tab === 'leaderboard' ? 'leaderboard' : 'tasks');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     setActiveTab(tab === 'leaderboard' ? 'leaderboard' : 'tasks');
+    setSearchQuery('');
   }, [tab]);
 
-
   const course = state.courses.find((course: any) => course.uuid === courseView);
-
-  console.log('course', course)
   const users = state.courseUsers?.[courseView ?? '']
-
   const assignments: Assignment[] = state.allAssignments?.[courseView ?? ''];
 
   const leaderboard = users
@@ -68,199 +66,209 @@ export default function CourseDetailScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Header
-        title="My courses"
-        searchPlaceholder="courses..."
+        title={'course info'}
+        searchPlaceholder={`${activeTab}...`}
+        onSearchChange={(text) => setSearchQuery(text)}
       />
 
       <LinearGradient
         colors={['#93B5C6', '#F2E6B6']}
         style={styles.content}
       >
-        <ScrollView showsVerticalScrollIndicator={false}>
-          <View>
-            {course ? (
-              <View>
-                {/* Tabs */}
-                <View style={styles.tabBar}>
-                  <Link
-                    href={{
-                      pathname: '/[courseView]',
-                      params: { courseView: courseView ?? '', tab: 'tasks' },
-                    }}
-                    style={[styles.tabButton, activeTab === 'tasks' && styles.activeTabButton]}
-                  >
-                    <Text style={[styles.tabButtonText, activeTab === 'tasks' && styles.activeTabButtonText]}>
-                      Tasks
-                    </Text>
-                  </Link>
+        {course ? (
+          <ScrollView showsVerticalScrollIndicator={false}>
+            {/* Tabs */}
+            <View style={styles.tabBar}>
+              <Link
+                href={{
+                  pathname: '/[courseView]',
+                  params: { courseView: courseView ?? '', tab: 'tasks' },
+                }}
+                style={[styles.tabButton, activeTab === 'tasks' && styles.activeTabButton]}
+              >
+                <Text style={[styles.tabButtonText, activeTab === 'tasks' && styles.activeTabButtonText]}>
+                  Tasks
+                </Text>
+              </Link>
 
-                  <Link
-                    href={{
-                      pathname: '/[courseView]',
-                      params: { courseView: courseView ?? '', tab: 'leaderboard' },
-                    }}
-                    style={[styles.tabButton, activeTab === 'leaderboard' && styles.activeTabButton]}
-                  >
-                    <Text style={[styles.tabButtonText, activeTab === 'leaderboard' && styles.activeTabButtonText]}>
-                      Leaderboard
-                    </Text>
-                  </Link>
-                </View>
+              <Link
+                href={{
+                  pathname: '/[courseView]',
+                  params: { courseView: courseView ?? '', tab: 'leaderboard' },
+                }}
+                style={[styles.tabButton, activeTab === 'leaderboard' && styles.activeTabButton]}
+              >
+                <Text style={[styles.tabButtonText, activeTab === 'leaderboard' && styles.activeTabButtonText]}>
+                  Leaderboard
+                </Text>
+              </Link>
+            </View>
 
-                {/* Course header */}
-                <View style={styles.card}>
-                  <View style={styles.cardHeader}>
-                    <Text style={styles.courseName}>{course.name}</Text>
-                    <Text style={styles.courseMeta}>
-                      {completedTasks}/{tasks} tasks completed
-                    </Text>
-                  </View>
-
-                  <View style={styles.cardBody}>
-                    <View style={styles.pointsRow}>
-                      <View style={styles.pointsLabelRow}>
-                        <PointsIcon color={'#f2e6b6'} size={16} />
-                        <Text style={styles.pointsLabel}>Points</Text>
-                      </View>
-                      <Text style={styles.pointsValue}>
-                        {course.pointsGained} / {course.pointsMax}
-                      </Text>
-                    </View>
-
-                    <View style={styles.progressTrack}>
-                      <View style={[
-                        styles.progressFill,
-                        { width: `${Math.min(Math.max(Math.round(progress), 0), 100)}%` },
-                      ]}
-                      />
-                    </View>
-                  </View>
-                </View>
-
-                {/* Tasks */}
-                {activeTab === 'tasks' && (
-                  <View style={{ paddingTop: 12 }}>
-                    {assignments.map((task: any) => {
-                      const progress = task.pointsMax > 0 ? ((task.pointsGained ?? 0) / task.pointsMax) * 100 : 0;
-                      const isCompleted = task.submissionDate !== null;
-                      const due = new Date(task.dueDate);
-                      let daysLeft = 0;
-
-                      if (!isCompleted) {
-                        const now = new Date();
-                        const msLeft = due.getTime() - now.getTime();
-                        daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
-                      }
-
-                      const isPastDue = new Date(task.dueDate).getTime() < Date.now() && !isCompleted;
-
-                      console.log('task.pointsGained', task.pointsGained)
-                      console.log('task.pointsMax', task.pointsMax)
-
-                      return (
-                        <View
-                          key={task.uuid}
-                          style={[
-                            styles.taskCard,
-                            isCompleted && styles.cardCompleted,
-                            isPastDue && styles.cardLate,
-                          ]}
-                        >
-                          <View style={styles.taskHeader}>
-                            <View style={{ flex: 1 }}>
-                              <View style={styles.taskTitleRow}>
-                                <Text style={styles.taskTitle}>{task.name}</Text>
-                                {isCompleted && <MaterialCommunityIcons name="check-circle" size={18} color="#16a34a" />}
-                              </View>
-                              <Text style={styles.taskDescription}>{task.description}</Text>
-                              <View style={styles.taskMetaRow}>
-                                <View style={styles.metaItem}>
-                                  <MaterialCommunityIcons name="calendar-month" size={14} color="#4a2e22" />
-                                  <Text style={styles.metaText}>
-                                    {due.toLocaleDateString()}
-                                  </Text>
-                                </View>
-
-                                <View style={styles.metaItem}>
-                                  <MaterialCommunityIcons name="clock-outline" size={14} color="#4a2e22" />
-                                  <Text style={styles.metaText}>
-                                    {isCompleted
-                                      ? 'Completed'
-                                      : isPastDue
-                                        ? `${Math.abs(daysLeft)} days late`
-                                        : `${daysLeft} days left`}
-                                  </Text>
-                                </View>
-                              </View>
-                            </View>
-
-                            <View style={styles.pointsContainer}>
-                              <Text style={styles.pointsLabel}>Points</Text>
-                              <Text style={styles.pointsValue}>{task.pointsGained ?? 0}/{task.pointsMax}</Text>
-                            </View>
-                          </View>
-
-                          <View style={styles.progressBackground}>
-                            <View style={[styles.progressFillTask, { width: `${progress}%` }]} />
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
-
-                {/* Leaderboard */}
-                {activeTab === 'leaderboard' && (
-                  <View style={{ paddingTop: 12 }}>
-                    {leaderboard.map((student: any) => {
-                      const isTopThree = student.rank <= 3;
-                      const rankStyle = [
-                        styles.rankCircle,
-                        student.rank === 1 && styles.rankGold,
-                        student.rank === 2 && styles.rankSilver,
-                        student.rank === 3 && styles.rankBronze,
-                      ];
-                      const containerStyle = [styles.leaderboardItem, student.isCurrentUser && styles.currentUserItem];
-
-                      return (
-                        <View key={student.rank} style={containerStyle}>
-                          <View style={styles.leaderboardRow}>
-                            <View style={rankStyle}>
-                              {isTopThree ? (
-                                <MaterialCommunityIcons name="trophy" size={14} color="white" />
-                              ) : (
-                                <Text style={styles.rankText}>
-                                  {student.rank}
-                                </Text>
-                              )}
-                            </View>
-
-                            <Text style={styles.leaderAvatar}>{student.avatar}</Text>
-
-                            <View>
-                              <Text style={styles.leaderName}>{student.name}</Text>
-                              {student.isCurrentUser && <Text style={styles.youLabel}>You</Text>}
-                            </View>
-                          </View>
-
-                          <View style={styles.pointsRowRight}>
-                            <MaterialCommunityIcons name="medal-outline" size={16} color="#4a2e22" />
-                            <Text style={styles.leaderPoints}>{student.points}</Text>
-                          </View>
-                        </View>
-                      );
-                    })}
-                  </View>
-                )}
+            {/* Course header */}
+            <View style={styles.card}>
+              <View style={styles.cardHeader}>
+                <Text style={styles.courseName}>{course.name}</Text>
+                <Text style={styles.courseMeta}>
+                  {completedTasks}/{tasks} tasks completed
+                </Text>
               </View>
-            )
-              : (
-                <View style={styles.emptyContainer}>
-                  <Text style={styles.emptyText}>Course not found</Text>
+
+              <View style={styles.cardBody}>
+                <View style={styles.pointsRow}>
+                  <View style={styles.pointsLabelRow}>
+                    <PointsIcon color={'#f2e6b6'} size={16} />
+                    <Text style={styles.pointsLabel}>Points</Text>
+                  </View>
+                  <Text style={styles.pointsValue}>
+                    {course.pointsGained} / {course.pointsMax}
+                  </Text>
                 </View>
-              )}
-          </View>
-        </ScrollView>
+
+                <View style={styles.progressTrack}>
+                  <View style={[
+                    styles.progressFill,
+                    { width: `${Math.min(Math.max(Math.round(progress), 0), 100)}%` },
+                  ]}
+                  />
+                </View>
+              </View>
+            </View>
+
+            {/* Tasks */}
+            {activeTab === 'tasks' && (
+              <View style={{ paddingTop: 12 }}>
+                {assignments
+                  .filter((task: any) => {
+                    const q = searchQuery.toLowerCase();
+                    return (
+                      task.name.toLowerCase().includes(q) ||
+                      task.description.toLowerCase().includes(q)
+                    );
+                  })
+                  .map((task: any) => {
+                    const progress = task.pointsMax > 0 ? ((task.pointsGained ?? 0) / task.pointsMax) * 100 : 0;
+                    const isCompleted = task.submissionDate !== null;
+                    const due = new Date(task.dueDate);
+                    let daysLeft = 0;
+
+                    if (!isCompleted) {
+                      const now = new Date();
+                      const msLeft = due.getTime() - now.getTime();
+                      daysLeft = Math.ceil(msLeft / (1000 * 60 * 60 * 24));
+                    }
+
+                    const isPastDue = new Date(task.dueDate).getTime() < Date.now() && !isCompleted;
+
+                    return (
+                      <View
+                        key={task.uuid}
+                        style={[
+                          styles.taskCard,
+                          isCompleted && styles.cardCompleted,
+                          isPastDue && styles.cardLate,
+                        ]}
+                      >
+                        <View style={styles.taskHeader}>
+                          <View style={{ flex: 1 }}>
+                            <View style={styles.taskTitleRow}>
+                              <Text style={styles.taskTitle}>{task.name}</Text>
+                              {isCompleted && <MaterialCommunityIcons name="check-circle" size={18} color="#16a34a" />}
+                            </View>
+                            <Text style={styles.taskDescription}>{task.description}</Text>
+                            <View style={styles.taskMetaRow}>
+                              <View style={styles.metaItem}>
+                                <MaterialCommunityIcons name="calendar-month" size={14} color="#4a2e22" />
+                                <Text style={styles.metaText}>
+                                  {due.toLocaleDateString()}
+                                </Text>
+                              </View>
+
+                              <View style={styles.metaItem}>
+                                <MaterialCommunityIcons name="clock-outline" size={14} color="#4a2e22" />
+                                <Text style={styles.metaText}>
+                                  {isCompleted
+                                    ? 'Completed'
+                                    : isPastDue
+                                      ? `${Math.abs(daysLeft)} days late`
+                                      : `${daysLeft} days left`}
+                                </Text>
+                              </View>
+                            </View>
+                          </View>
+
+                          <View style={styles.pointsContainer}>
+                            <Text style={styles.taskPointsLabel}>Points</Text>
+                            <Text style={styles.taskPointsValue}>{task.pointsGained ?? 0}/{task.pointsMax}</Text>
+                          </View>
+                        </View>
+
+                        <View style={styles.progressBackground}>
+                          <View style={[styles.progressFillTask, { width: `${progress}%` }]} />
+                        </View>
+                      </View>
+                    );
+                  })}
+              </View>
+            )}
+
+            {/* Leaderboard */}
+            {activeTab === 'leaderboard' && (
+              <View style={{ paddingTop: 12 }}>
+                {leaderboard
+                  .filter((student: any) => {
+                    const q = searchQuery.toLowerCase();
+                    return student.name.toLowerCase().includes(q);
+                  })
+                  .map((student: any) => {
+
+                    const isTopThree = student.rank <= 3;
+                    const rankStyle = [
+                      styles.rankCircle,
+                      student.rank === 1 && styles.rankGold,
+                      student.rank === 2 && styles.rankSilver,
+                      student.rank === 3 && styles.rankBronze,
+                    ];
+                    const containerStyle = [styles.leaderboardItem, student.isCurrentUser && styles.currentUserItem];
+
+                    return (
+                      <View key={student.rank} style={containerStyle}>
+                        <View style={styles.leaderboardRow}>
+                          <View style={rankStyle}>
+                            {isTopThree ? (
+                              <MaterialCommunityIcons name="trophy" size={14} color="white" />
+                            ) : (
+                              <Text style={styles.rankText}>
+                                {student.rank}
+                              </Text>
+                            )}
+                          </View>
+
+                          <Text style={styles.leaderAvatar}>{student.avatar}</Text>
+
+                          <View>
+                            <Text style={styles.leaderName}>{student.name}</Text>
+                            {student.isCurrentUser && <Text style={styles.youLabel}>You</Text>}
+                          </View>
+                        </View>
+
+                        <View style={styles.pointsRowRight}>
+                          <MaterialCommunityIcons name="medal-outline" size={16} color="#4a2e22" />
+                          <Text style={styles.leaderPoints}>{student.points}</Text>
+                        </View>
+                      </View>
+                    );
+                  })}
+              </View>
+            )}
+          </ScrollView>
+        )
+          : (
+            <ScrollView>
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Course not found</Text>
+              </View>
+            </ScrollView>
+          )}
       </LinearGradient>
     </SafeAreaView >
   );
@@ -368,6 +376,18 @@ const styles = StyleSheet.create({
   },
   pointsValue: {
     color: '#f2e6b6',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+
+  taskPointsLabel: {
+    color: '#4a2e22',
+    fontFamily: 'Capriola',
+    fontSize: 14,
+    marginLeft: 6,
+  },
+  taskPointsValue: {
+    color: '#4a2e22',
     fontSize: 14,
     fontWeight: '700',
   },
