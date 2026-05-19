@@ -147,7 +147,7 @@ export default function CourseDetailScreen() {
                   })
                   .map((task: any) => {
                     const progress = task.pointsMax > 0 ? ((task.pointsGained ?? 0) / task.pointsMax) * 100 : 0;
-                    const isCompleted = task.submissionDate !== null;
+                    const isCompleted = task.submissionDate !== null; // <-- Checks if the task has been submitted
                     const due = new Date(task.dueDate);
                     let daysLeft = 0;
 
@@ -172,15 +172,12 @@ export default function CourseDetailScreen() {
                           <View style={{ flex: 1 }}>
                             <View style={styles.taskTitleRow}>
                               <Text style={styles.taskTitle}>{task.name}</Text>
-                              {isCompleted && <MaterialCommunityIcons name="check-circle" size={18} color="#16a34a" />}
                             </View>
                             <Text style={styles.taskDescription}>{task.description}</Text>
                             <View style={styles.taskMetaRow}>
                               <View style={styles.metaItem}>
                                 <MaterialCommunityIcons name="calendar-month" size={14} color="#4a2e22" />
-                                <Text style={styles.metaText}>
-                                  {due.toLocaleDateString()}
-                                </Text>
+                                <Text style={styles.metaText}>{due.toLocaleDateString()}</Text>
                               </View>
 
                               <View style={styles.metaItem}>
@@ -195,12 +192,16 @@ export default function CourseDetailScreen() {
                               </View>
                             </View>
                           </View>
-
-                          <View style={styles.pointsContainer}>
-                            <Text style={styles.taskPointsLabel}>Points</Text>
-                            <Text style={styles.taskPointsValue}>{task.pointsGained ?? 0}/{task.pointsMax}</Text>
-                          </View>
                         </View>
+
+                        {isCompleted &&
+                          <View style={styles.pointsValueRow}>
+                            <Text style={styles.taskPointsValue}>
+                              {task.pointsGained ?? 0}/{task.pointsMax}
+                            </Text>
+
+                            <PointsIcon color={'#4a2e22'} size={16} />
+                          </View>}
 
                         <View style={styles.progressBackground}>
                           <View style={[styles.progressFillTask, { width: `${progress}%` }]} />
@@ -441,6 +442,13 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff7ed',
     borderColor: '#fed7aa',
   },
+  pointsValueRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+  },
 
   taskHeader: {
     flexDirection: 'row',
@@ -489,7 +497,7 @@ const styles = StyleSheet.create({
   progressBackground: {
     width: '100%',
     height: 8,
-    backgroundColor: '#4a2e226c',
+    backgroundColor: '#4a2e2291',
     borderRadius: 999,
     overflow: 'hidden',
   },
