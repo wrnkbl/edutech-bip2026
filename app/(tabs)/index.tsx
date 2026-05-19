@@ -2,7 +2,7 @@ import PointsIcon from '@/app/components/Icons/PointsIcon';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Link } from 'expo-router';
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAppState } from '../_shared/appstate';
 import Header from '../components/Header';
@@ -23,7 +23,7 @@ export default function HomeScreen() {
         style={styles.content}
       >
         <ScrollView contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
-          <View>
+          <View style={styles.mainWrapper}>
             {isReady ? (
               state.courses.map((course: any) => {
                 const tasks = course.assignments.length;
@@ -67,8 +67,8 @@ export default function HomeScreen() {
                 )
               })) :
               (
-                <View>
-                  <Text>Insert loading icon here</Text>
+                <View style={styles.loadingContainer}>
+                  <ActivityIndicator size="large" color="#4E342E" />
                 </View>
               )
             }
@@ -97,7 +97,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     opacity: 0.7,
   },
-
+  mainWrapper: {
+    flex: 1,
+    width: '100%',
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: 100,
+  },
   listContainer: {
     paddingBottom: 24,
     alignItems: 'stretch',
@@ -106,8 +115,6 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     width: '100%',
   },
-
-  /* courseCard styles */
   card: {
     backgroundColor: '#f2e6b6',
     borderRadius: 16,
@@ -135,11 +142,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Capriola',
   },
-
   cardBody: {
     gap: 8,
   },
-
   pointsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -160,7 +165,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-
   progressTrack: {
     width: '100%',
     height: 8,
@@ -174,4 +178,3 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
 });
-
