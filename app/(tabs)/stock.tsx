@@ -10,102 +10,55 @@ import Header from '../components/Header';
 export default function StockScreen() {
   const store = useAppState((s: any) => s.store);
   const claimItem = useAppState((s: any) => s.claimItem);
-  const userPoints = useAppState((s: any) => s.userPoints);
+  const getBoughtItems = useAppState((s: any) => s.getBoughtItems);
+  const getClaimedItems = useAppState((s: any) => s.getClaimedItems);
   const isLoading = useAppState((s: any) => s.isLoading);
   const isInitialized = useAppState((s: any) => s.isInitialized);
   
-  const [purchasingUuid, setPurchasingUuid] = useState<string | null>(null);
+  const [claimingUuid, setClaimingUuid] = useState<string | null>(null);
   const [qrModalVisible, setQrModalVisible] = useState<boolean>(false);
   const [searchQuery, setSearchQuery] = useState<string>('');
-  const [now, setNow] = useState<number>(Date.now());
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-    return () => clearInterval(interval);
-  }, []);
 
   let [fontsLoaded] = useFonts({
     'TitanOne': TitanOne_400Regular,
     'Capriola': Capriola_400Regular,
   });
 
-  const isReady = fontsLoaded && !isLoading && isInitialized;
+   const isReady = fontsLoaded && !isLoading && isInitialized;
 
-  if (!isReady) {
-    return (
-      <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#4E342E" />
-      </View>
-    );
-  }
+   if (!isReady) {
+     return (
+       <View style={styles.centered}>
+         <ActivityIndicator size="large" color="#4E342E" />
+       </View>
+     );
+   }
 
-  const allItems = store?.vendors?.flatMap((vendor: any) => vendor.items) || [];
-  const claimedRecords: any[] = store?.claimedItems ? Object.values(store.claimedItems) : [];
-  const claimedItemUuuids = claimedRecords.map((record: any) => record.itemUuid);
+   const boughtItems = getBoughtItems().filter((entry: any) => {
+     const matchesSearch = 
+       entry.item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       entry.item.description.toLowerCase().includes(searchQuery.toLowerCase());
+     return matchesSearch;
+   });
 
-  const availableItems = allItems.filter((item: any) => {
-    if (!item.reclaimable && claimedItemUuuids.includes(item.uuid)) {
-      return false;
-    }
-    
-    const matchesSearch = 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
+   const claimedItems = getClaimedItems().filter((entry: any) => {
+     const matchesSearch = 
+       entry.item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+       entry.item.description.toLowerCase().includes(searchQuery.toLowerCase());
+     return matchesSearch;
+   });
 
-    return matchesSearch;
-  });
-
-  const usedItems = allItems.filter((item: any) => {
-    const isClaimed = claimedItemUuuids.includes(item.uuid);
-    
-    const matchesSearch = 
-      item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return isClaimed && matchesSearch;
-  });
-
-  const getCooldownTimeLeft = (item: any) => {
-    if (!item.reclaimable || item.reclaimCooldown <= 0) return 0;
-
-    const itemClaims = claimedRecords.filter((r: any) => r.itemUuid === item.uuid);
-    if (itemClaims.length === 0) return 0;
-   
-    const timestamps = itemClaims.map((r: any) => new Date(r.timestamp).getTime());
-    const lastClaimTime = Math.max(...timestamps);
-
-    const timePassedMs = now - lastClaimTime;
-    const cooldownMs = item.reclaimCooldown * 1000;
-
-    if (timePassedMs < cooldownMs) {
-      return Math.ceil((cooldownMs - timePassedMs) / 1000);
-    }
-    return 0;
-  };
-
-  const handleUseItem = async (itemUuid: string, pointsCost: number, cooldownLeft: number) => {
-    if (cooldownLeft > 0) {
-      Alert.alert("Cooldown", `Please wait ${cooldownLeft}s before claiming this item again.`);
-      return;
-    }
-
-    if (userPoints < pointsCost) {
-      Alert.alert("Error", "You don't have enough points to claim this item!");
-      return;
-    }
-
-    try {
-      setPurchasingUuid(itemUuid);
-      await claimItem(itemUuid);
-      setQrModalVisible(true);
-    } catch (error: any) {
-      Alert.alert("Error", error?.message || "Failed to claim the item.");
-    } finally {
-      setPurchasingUuid(null);
-    }
-  };
+   const handleClaimItem = async (itemUuid: string) => {
+     try {
+       setClaimingUuid(itemUuid);
+       await claimItem(itemUuid);
+       setQrModalVisible(true);
+     } catch (error: any) {
+       Alert.alert("Error", error?.message || "Failed to claim the item.");
+     } finally {
+       setClaimingUuid(null);
+     }
+   };
 
   return (
     <View style={styles.mainContainer}>
@@ -119,84 +72,91 @@ export default function StockScreen() {
         colors={['#93B5C6', '#F2E6B6']}
         style={styles.content}
       >
-        <ScrollView style={styles.scrollView} contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
-          {availableItems.map((item: any) => {
-            const cooldownLeft = getCooldownTimeLeft(item);
-            const isInCooldown = cooldownLeft > 0;
+         <ScrollView style={styles.scrollView} contentContainerStyle={styles.listContainer} showsVerticalScrollIndicator={false}>
+           {boughtItems.length === 0 && claimedItems.length === 0 ? (
+             <Text style={styles.emptyText}>No items to show</Text>
+           ) : (
+             <>
+               {boughtItems.length > 0 && (
+                 <>
+                   <View style={styles.sectionHeader}>
+                     <Text style={styles.sectionTitle}>PURCHASED</Text>
+                   </View>
+                   {boughtItems.map((entry: any) => (
+                     <View key={entry.buyUuid} style={styles.card}>
+                       <View style={styles.logoContainer}>
+                         {entry.item.image ? (
+                           <Image source={{ uri: entry.item.image }} style={styles.itemImage} resizeMode="contain" />
+                         ) : (
+                           <Ionicons name="gift" size={32} color="#4A2E22" />
+                         )}
+                       </View>
+                       
+                       <View style={styles.detailsContainer}>
+                         <Text style={styles.itemTitle}>{entry.item.name}</Text>
+                         <Text style={styles.itemDescription}>{entry.item.description}</Text>
+                         <View style={styles.priceRow}>
+                           <Text style={styles.priceLabel}>Price: </Text>
+                           <Text style={styles.priceValue}>{entry.item.pointsCost} </Text>
+                           <Ionicons name="ribbon" size={14} color="#93B5C6" />
+                         </View>
+                       </View>
 
-            return (
-              <View key={item.uuid} style={[styles.card, isInCooldown && styles.cooldownCard]}>
-                <View style={styles.logoContainer}>
-                  {item.image ? (
-                    <Image source={{ uri: item.image }} style={[styles.itemImage, isInCooldown && styles.cooldownImage]} resizeMode="contain" />
-                  ) : (
-                    <Ionicons name="gift" size={32} color="#4A2E22" />
-                  )}
-                </View>
-                
-                <View style={styles.detailsContainer}>
-                  <Text style={[styles.itemTitle, isInCooldown && styles.cooldownText]}>{item.name}</Text>
-                  <Text style={[styles.itemDescription, isInCooldown && styles.cooldownText]}>{item.description}</Text>
-                  <View style={styles.priceRow}>
-                    <Text style={[styles.priceLabel, isInCooldown && styles.cooldownText]}>Price: </Text>
-                    <Text style={[styles.priceValue, isInCooldown && styles.cooldownText]}>{item.pointsCost} </Text>
-                    <Ionicons name="ribbon" size={14} color={isInCooldown ? "rgba(74, 46, 34, 0.4)" : "#93B5C6"} />
-                  </View>
-                </View>
+                       <TouchableOpacity 
+                         style={styles.useButton}
+                         onPress={() => handleClaimItem(entry.item.uuid)}
+                         disabled={claimingUuid !== null}
+                       >
+                         {claimingUuid === entry.item.uuid ? (
+                           <ActivityIndicator size="small" color="#F2E6B6" />
+                         ) : (
+                           <Text style={styles.useButtonText}>Claim</Text>
+                         )}
+                       </TouchableOpacity>
+                     </View>
+                   ))}
+                 </>
+               )}
 
-                <TouchableOpacity 
-                  style={[styles.useButton, isInCooldown && styles.cooldownButton]}
-                  onPress={() => handleUseItem(item.uuid, item.pointsCost, cooldownLeft)}
-                  disabled={purchasingUuid !== null}
-                >
-                  {purchasingUuid === item.uuid ? (
-                    <ActivityIndicator size="small" color="#F2E6B6" />
-                  ) : isInCooldown ? (
-                    <Text style={styles.useButtonText}>{cooldownLeft}s</Text>
-                  ) : (
-                    <Text style={styles.useButtonText}>Use</Text>
-                  )}
-                </TouchableOpacity>
-              </View>
-            );
-          })}
+               {claimedItems.length > 0 && (
+                 <>
+                   <View style={styles.dividerRow}>
+                     <View style={styles.dividerLine} />
+                     <Text style={styles.dividerText}>CLAIMED</Text>
+                     <View style={styles.dividerLine} />
+                   </View>
 
-          {usedItems.length > 0 && (
-            <>
-              <View style={styles.dividerRow}>
-                <View style={styles.dividerLine} />
-                <Text style={styles.dividerText}>USED</Text>
-                <View style={styles.dividerLine} />
-              </View>
+                   {claimedItems.map((entry: any) => (
+                     <View key={entry.claimUuid} style={[styles.card, styles.claimedCard]}>
+                       <View style={[styles.logoContainer, styles.claimedLogoContainer]}>
+                         {entry.item.image ? (
+                           <Image source={{ uri: entry.item.image }} style={[styles.itemImage, styles.claimedImage]} resizeMode="contain" />
+                         ) : (
+                           <Ionicons name="gift" size={32} color="#4A2E22" />
+                         )}
+                       </View>
+                       
+                       <View style={styles.detailsContainer}>
+                         <Text style={[styles.itemTitle, styles.claimedText]}>{entry.item.name}</Text>
+                         <Text style={[styles.itemDescription, styles.claimedText]}>{entry.item.description}</Text>
+                         <View style={styles.priceRow}>
+                           <Text style={[styles.priceLabel, styles.claimedText]}>Claimed at: </Text>
+                           <Text style={[styles.priceValue, styles.claimedText]}>
+                             {entry.claimedAt.toLocaleTimeString()}
+                           </Text>
+                         </View>
+                       </View>
 
-              {usedItems.map((item: any, index: number) => (
-                <View key={`used-${item.uuid}-${index}`} style={[styles.card, styles.usedCard]}>
-                  <View style={[styles.logoContainer, styles.usedLogoContainer]}>
-                    {item.image ? (
-                      <Image source={{ uri: item.image }} style={[styles.itemImage, styles.usedImage]} resizeMode="contain" />
-                    ) : (
-                      <Ionicons name="gift" size={32} color="#4A2E22" />
-                    )}
-                  </View>
-                  
-                  <View style={styles.detailsContainer}>
-                    <Text style={[styles.itemTitle, styles.usedText]}>{item.name}</Text>
-                    <Text style={[styles.itemDescription, styles.usedText]}>{item.description}</Text>
-                    <View style={styles.priceRow}>
-                      <Text style={[styles.priceLabel, styles.usedText]}>Price: </Text>
-                      <Text style={[styles.priceValue, styles.usedText]}>{item.pointsCost} </Text>
-                      <Ionicons name="ribbon" size={14} color="rgba(74, 46, 34, 0.4)" />
-                    </View>
-                  </View>
-
-                  <View style={[styles.useButton, styles.usedButton]}>
-                    <Text style={styles.useButtonText}>Use</Text>
-                  </View>
-                </View>
-              ))}
-            </>
-          )}
-        </ScrollView>
+                       <View style={[styles.useButton, styles.claimedButton]}>
+                         <Ionicons name="checkmark" size={20} color="#4A2E22" />
+                       </View>
+                     </View>
+                   ))}
+                 </>
+               )}
+             </>
+           )}
+         </ScrollView>
       </LinearGradient>
 
       <Modal
@@ -263,34 +223,43 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(0,0,0,0.03)',
     width: '100%',
   },
-  usedCard: {
-    opacity: 0.6,
-  },
-  cooldownCard: {
-    opacity: 0.7,
-  },
-  logoContainer: {
-    width: 70,
-    height: 70,
-    backgroundColor: 'rgba(255, 255, 255, 0.4)',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 4,
-  },
-  usedLogoContainer: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-  },
-  itemImage: {
-    width: '100%',
-    height: '100%',
-  },
-  usedImage: {
-    opacity: 0.4,
-  },
-  cooldownImage: {
-    opacity: 0.3,
-  },
+   usedCard: {
+     opacity: 0.6,
+   },
+   claimedCard: {
+     opacity: 0.6,
+   },
+   cooldownCard: {
+     opacity: 0.7,
+   },
+   logoContainer: {
+     width: 70,
+     height: 70,
+     backgroundColor: 'rgba(255, 255, 255, 0.4)',
+     borderRadius: 12,
+     justifyContent: 'center',
+     alignItems: 'center',
+     padding: 4,
+   },
+   usedLogoContainer: {
+     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+   },
+   claimedLogoContainer: {
+     backgroundColor: 'rgba(255, 255, 255, 0.2)',
+   },
+   itemImage: {
+     width: '100%',
+     height: '100%',
+   },
+   usedImage: {
+     opacity: 0.4,
+   },
+   claimedImage: {
+     opacity: 0.4,
+   },
+   cooldownImage: {
+     opacity: 0.3,
+   },
   detailsContainer: {
     flex: 1,
     paddingHorizontal: 12,
@@ -323,34 +292,41 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  useButton: {
-    backgroundColor: '#93b5c6',
-    borderRadius: 4,
-    paddingHorizontal: 20,
-    paddingVertical: 8,
-    justifyContent: 'center',
-    alignItems: 'center',
-    minWidth: 70,
-  },
-  usedButton: {
-    backgroundColor: '#A8BDC7',
-    opacity: 0.5,
-  },
-  cooldownButton: {
-    backgroundColor: '#A8BDC7',
-  },
-  useButtonText: {
-    fontFamily: 'TitanOne',
-    color: '#f2e6b6',
-    fontSize: 13,
-  },
-  usedText: {
-    color: 'rgba(74, 46, 34, 0.6)',
-  },
-  cooldownText: {
-    color: 'rgba(74, 46, 34, 0.5)',
-  },
-  dividerRow: {
+   useButton: {
+     backgroundColor: '#93b5c6',
+     borderRadius: 4,
+     paddingHorizontal: 20,
+     paddingVertical: 8,
+     justifyContent: 'center',
+     alignItems: 'center',
+     minWidth: 70,
+   },
+   usedButton: {
+     backgroundColor: '#A8BDC7',
+     opacity: 0.5,
+   },
+   claimedButton: {
+     backgroundColor: '#A8BDC7',
+     opacity: 0.8,
+   },
+   cooldownButton: {
+     backgroundColor: '#A8BDC7',
+   },
+   useButtonText: {
+     fontFamily: 'TitanOne',
+     color: '#f2e6b6',
+     fontSize: 13,
+   },
+   usedText: {
+     color: 'rgba(74, 46, 34, 0.6)',
+   },
+   claimedText: {
+     color: 'rgba(74, 46, 34, 0.6)',
+   },
+   cooldownText: {
+     color: 'rgba(74, 46, 34, 0.5)',
+   },
+   dividerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 16,
@@ -361,15 +337,32 @@ const styles = StyleSheet.create({
     backgroundColor: '#f2e6b6',
     opacity: 1,
   },
-  dividerText: {
-    fontFamily: 'TitanOne',
-    color: '#f2e6b6',
-    fontSize: 14,
-    paddingHorizontal: 10,
-    letterSpacing: 1,
-    opacity: 1,
-  },
-  modalOverlay: {
+   dividerText: {
+     fontFamily: 'TitanOne',
+     color: '#f2e6b6',
+     fontSize: 14,
+     paddingHorizontal: 10,
+     letterSpacing: 1,
+     opacity: 1,
+   },
+   sectionHeader: {
+     marginVertical: 16,
+     alignItems: 'center',
+   },
+   sectionTitle: {
+     fontFamily: 'TitanOne',
+     color: '#f2e6b6',
+     fontSize: 14,
+     letterSpacing: 1,
+   },
+   emptyText: {
+     fontFamily: 'Capriola',
+     color: '#f2e6b6',
+     fontSize: 16,
+     textAlign: 'center',
+     marginTop: 40,
+   },
+   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',

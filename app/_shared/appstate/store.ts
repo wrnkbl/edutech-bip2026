@@ -22,6 +22,8 @@ export interface AppStateStore {
   authenticate(): Promise<boolean>;
   fetchAllData(): Promise<void>;
   getClaimedItems(): { item: StoreItem; claimedAt: Date }[];
+  getBoughtItems(): { item: StoreItem; boughtAt: Date }[];
+  buyItem(itemUuid: string): Promise<void>;
   claimItem(itemUuid: string): Promise<void>;
   clear(): void;
 }
@@ -173,93 +175,145 @@ export const useAppState: any = create((set: any, get: any) => ({
     }
   },
 
-  getClaimedItems() {
-    const store = get().store;
-    if (!store) {
-      return [];
-    }
+   getClaimedItems() {
+     const store = get().store;
+     if (!store) {
+       return [];
+     }
 
-    const now = Date.now();
-    const fifteenMinutesMs = 15 * 60 * 1000;
+     const now = Date.now();
+     const fifteenMinutesMs = 15 * 60 * 1000;
 
-    return (Object.entries(store.claimedItems) as Array<[string, any]>)
-      .map(([claimUuid, claimRecord]) => {
-        const item = store.vendors
-          .flatMap((vendor: StoreVendor) => vendor.items)
-          .find((candidate: StoreItem) => candidate.uuid === claimRecord.itemUuid);
+     return (Object.entries(store.claimedItems) as [string, any][])
+       .map(([claimUuid, claimRecord]) => {
+         const item = store.vendors
+           .flatMap((vendor: StoreVendor) => vendor.items)
+           .find((candidate: StoreItem) => candidate.uuid === claimRecord.itemUuid);
 
-        return item ? { claimUuid, item, claimedAt: claimRecord.timestamp } : null;
-      })
-      .filter((entry): entry is { claimUuid: string; item: StoreItem; claimedAt: Date } => {
-        if (!entry) {
-          return false;
-        }
+         return item ? { claimUuid, item, claimedAt: claimRecord.timestamp } : null;
+       })
+       .filter((entry): entry is { claimUuid: string; item: StoreItem; claimedAt: Date } => {
+         if (!entry) {
+           return false;
+         }
 
-        const age = now - entry.claimedAt.getTime();
-        return age >= 0 && age <= fifteenMinutesMs;
-      })
-      .sort((a, b) => b.claimedAt.getTime() - a.claimedAt.getTime());
-  },
+         const age = now - entry.claimedAt.getTime();
+         return age >= 0 && age <= fifteenMinutesMs;
+       })
+       .sort((a, b) => b.claimedAt.getTime() - a.claimedAt.getTime());
+   },
 
-  async claimItem(itemUuid: string) {
-    if (!get().api || !get().db) {
-      get().init();
-    }
+   getBoughtItems() {
+     const store = get().store;
+     if (!store) {
+       return [];
+     }
 
-    if (!get().user) {
-      const ok = await get().authenticate();
-      if (!ok) {
-        throw new Error('User not authenticated');
-      }
-    }
+     return (Object.entries(store.boughtItems) as [string, any][])
+       .map(([buyUuid, buyRecord]: [string, any]) => {
+         const item = store.vendors
+           .flatMap((vendor: StoreVendor) => vendor.items)
+           .find((candidate: StoreItem) => candidate.uuid === buyRecord.itemUuid);
 
-    const db = get().db;
-    const user = get().user;
-    const store = get().store;
+         return item ? { buyUuid, item, boughtAt: buyRecord.timestamp } : null;
+       })
+       .filter((entry): entry is { buyUuid: string; item: StoreItem; boughtAt: Date } => entry !== null)
+       .sort((a, b) => b.boughtAt.getTime() - a.boughtAt.getTime());
+   },
 
-    if (!db || !user || !store) {
-      throw new Error('Store not loaded');
-    }
+   async buyItem(itemUuid: string) {
+     if (!get().api || !get().db) {
+       get().init();
+     }
 
-    const item = store.vendors
-      .flatMap((vendor: StoreVendor) => vendor.items)
-      .find((candidate: StoreItem) => candidate.uuid === itemUuid);
+     if (!get().user) {
+       const ok = await get().authenticate();
+       if (!ok) {
+         throw new Error('User not authenticated');
+       }
+     }
 
-    if (!item) {
-      throw new Error(`Item not found: ${itemUuid}`);
-    }
+     const user = get().user;
+     const store = get().store;
 
-    // Check if item was claimed recently and is still in cooldown
-    const claimedItems = get().getClaimedItems();
-    const recentClaim = claimedItems.find((c: any) => c.item.uuid === itemUuid);
-    if (recentClaim) {
-      const timeSinceLastClaim = Date.now() - recentClaim.claimedAt.getTime();
-      const cooldownMs = recentClaim.item.reclaimCooldown * 1000;
-      if (timeSinceLastClaim < cooldownMs) {
-        throw new Error(
-          `Item still in reclaim cooldown. Try again in ${Math.ceil((cooldownMs - timeSinceLastClaim) / 1000)} seconds.`,
-        );
-      }
-    }
+     if (!user || !store) {
+       throw new Error('Store not loaded');
+     }
 
-    const timestamp = new Date();
-    const claimUuid = await db.claimItem(itemUuid, user.uuid, timestamp);
-    if (!claimUuid) {
-      throw new Error(`Unable to claim item: ${itemUuid}`);
-    }
+     const item = store.vendors
+       .flatMap((vendor: StoreVendor) => vendor.items)
+       .find((candidate: StoreItem) => candidate.uuid === itemUuid);
 
-    const nextUserPoints = Math.max(0, get().userPoints - item.pointsCost);
-    const nextStore = new Store({
-      uuid: store.uuid,
-      vendors: store.vendors,
-      claimedItems: {
-        ...store.claimedItems,
-        [claimUuid]: { itemUuid, timestamp },
-      },
-    });
+     if (!item) {
+       throw new Error(`Item not found: ${itemUuid}`);
+     }
 
-    set({ userPoints: nextUserPoints, store: nextStore });
-  },
+     // Check if user has enough points
+     if (get().userPoints < item.pointsCost) {
+       throw new Error(`Insufficient points. Need ${item.pointsCost}, have ${get().userPoints}`);
+     }
+
+     const timestamp = new Date();
+     const buyUuid = crypto.randomUUID();
+
+     const nextUserPoints = Math.max(0, get().userPoints - item.pointsCost);
+     const nextStore = new Store({
+       uuid: store.uuid,
+       vendors: store.vendors,
+       claimedItems: store.claimedItems,
+       boughtItems: {
+         ...store.boughtItems,
+         [buyUuid]: { itemUuid, timestamp },
+       },
+     });
+
+     set({ userPoints: nextUserPoints, store: nextStore });
+   },
+
+   async claimItem(itemUuid: string) {
+     const store = get().store;
+
+     if (!store) {
+       throw new Error('Store not loaded');
+     }
+
+     const item = store.vendors
+       .flatMap((vendor: StoreVendor) => vendor.items)
+       .find((candidate: StoreItem) => candidate.uuid === itemUuid);
+
+     if (!item) {
+       throw new Error(`Item not found: ${itemUuid}`);
+     }
+
+     // Find the bought item to claim
+     const boughtEntry = Object.entries(store.boughtItems).find(
+       ([, record]: [string, any]) => (record as any).itemUuid === itemUuid,
+     );
+
+     if (!boughtEntry) {
+       throw new Error(`Item not in bought list: ${itemUuid}`);
+     }
+
+     const [buyUuid] = boughtEntry;
+     const claimUuid = crypto.randomUUID();
+     const timestamp = new Date();
+
+     // Remove from boughtItems and add to claimedItems
+     const nextBoughtItems = { ...store.boughtItems };
+     delete nextBoughtItems[buyUuid];
+
+     const nextStore = new Store({
+       uuid: store.uuid,
+       vendors: store.vendors,
+       claimedItems: {
+         ...store.claimedItems,
+         [claimUuid]: { itemUuid, timestamp },
+       },
+       boughtItems: nextBoughtItems,
+     });
+
+     set({ store: nextStore });
+   },
 
   clear() {
     set({
