@@ -10,7 +10,7 @@ import Header from '../components/Header';
 export default function MarketScreen() {
   const {
     store,
-    claimItem,
+    buyItem,
     userPoints,
     isLoading,
     isInitialized,
@@ -52,27 +52,27 @@ export default function MarketScreen() {
     setConfirmModalVisible(true);
   };
 
-  const handleConfirmPurchase = async () => {
-    if (!selectedItem) return;
+   const handleConfirmPurchase = async () => {
+     if (!selectedItem) return;
 
-    if (userPoints < selectedItem.pointsCost) {
-      setConfirmModalVisible(false);
-      Alert.alert("Insufficient Points", "You don't have enough points to purchase this item.");
-      return;
-    }
+     if (userPoints < selectedItem.pointsCost) {
+       setConfirmModalVisible(false);
+       Alert.alert("Insufficient Points", "You don't have enough points to purchase this item.");
+       return;
+     }
 
-    try {
-      setConfirmModalVisible(false);
-      setPurchasingUuid(selectedItem.uuid);
-      await claimItem(selectedItem.uuid);
-      Alert.alert("Success", `You successfully purchased ${selectedItem.name}!`);
-    } catch (error: any) {
-      Alert.alert("Purchase Failed", error?.message || "Something went wrong.");
-    } finally {
-      setPurchasingUuid(null);
-      setSelectedItem(null);
-    }
-  };
+     try {
+       setConfirmModalVisible(false);
+       setPurchasingUuid(selectedItem.uuid);
+       await buyItem(selectedItem.uuid);
+       Alert.alert("Success", `You successfully purchased ${selectedItem.name}!`);
+     } catch (error: any) {
+       Alert.alert("Purchase Failed", error?.message || "Something went wrong.");
+     } finally {
+       setPurchasingUuid(null);
+       setSelectedItem(null);
+     }
+   };
 
   return (
     <View style={styles.mainContainer}>

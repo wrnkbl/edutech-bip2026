@@ -15,12 +15,14 @@ export interface StoreInit {
   uuid?: string;
   vendors?: (StoreVendor | StoreVendorInit | StoreVendorJson)[];
   claimedItems?: Record<string, ClaimedItemRecord | ClaimedItemRecordJson | { itemUuid: string; timestamp: string | Date }>;
+  boughtItems?: Record<string, ClaimedItemRecord | ClaimedItemRecordJson | { itemUuid: string; timestamp: string | Date }>;
 }
 
 export interface StoreJson {
   uuid: string;
   vendors: StoreVendorJson[];
   claimedItems: Record<string, ClaimedItemRecordJson>;
+  boughtItems: Record<string, ClaimedItemRecordJson>;
 }
 
 export class Store {
@@ -30,16 +32,20 @@ export class Store {
 
   claimedItems: Record<string, ClaimedItemRecord>;
 
+  boughtItems: Record<string, ClaimedItemRecord>;
+
   constructor({
     uuid = createUuid(),
     vendors = [],
     claimedItems = {},
+    boughtItems = {},
   }: StoreInit = {}) {
     this.uuid = uuid;
     this.vendors = vendors.map((vendor) =>
       vendor instanceof StoreVendor ? vendor : new StoreVendor(vendor),
     );
     this.claimedItems = this.normalizeClaimedItems(claimedItems);
+    this.boughtItems = this.normalizeClaimedItems(boughtItems);
   }
 
   private normalizeClaimedItems(items: Record<string, any>): Record<string, ClaimedItemRecord> {
@@ -60,6 +66,7 @@ export class Store {
       uuid: json.uuid,
       vendors: json.vendors.map((vendor) => StoreVendor.fromJson(vendor)),
       claimedItems: json.claimedItems,
+      boughtItems: json.boughtItems,
     });
   }
 
@@ -71,10 +78,18 @@ export class Store {
         timestamp: value.timestamp.toISOString(),
       };
     }
+    const boughtItemsJson: Record<string, ClaimedItemRecordJson> = {};
+    for (const [key, value] of Object.entries(this.boughtItems)) {
+      boughtItemsJson[key] = {
+        itemUuid: value.itemUuid,
+        timestamp: value.timestamp.toISOString(),
+      };
+    }
     return {
       uuid: this.uuid,
       vendors: this.vendors.map((vendor) => vendor.toJson()),
       claimedItems: claimedItemsJson,
+      boughtItems: boughtItemsJson,
     };
   }
 }
