@@ -30,6 +30,48 @@
           "name": "Functions",
           "description": "Write functions with different signatures",
           "dueDate": "2026-06-03T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b815-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Arrays and Collections",
+          "description": "Work with arrays, maps, and sets in TypeScript",
+          "dueDate": "2026-06-10T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b816-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Conditionals",
+          "description": "Master if/else statements and switch cases",
+          "dueDate": "2026-06-08T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b817-9dad-11d1-80b4-00c04fd430c8",
+          "name": "While Loops",
+          "description": "Practice using while and do-while loops",
+          "dueDate": "2026-06-15T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b818-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Object-Oriented Programming",
+          "description": "Create classes and work with inheritance",
+          "dueDate": "2026-06-22T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b819-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Error Handling",
+          "description": "Implement try-catch blocks and error management",
+          "dueDate": "2026-06-29T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b81a-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Higher-Order Functions",
+          "description": "Work with map, filter, reduce and callback functions",
+          "dueDate": "2026-07-06T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b81b-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Async/Await",
+          "description": "Handle asynchronous operations with async/await patterns",
+          "dueDate": "2026-07-13T23:59:59Z"
         }
       ],
       "users": [
@@ -90,6 +132,42 @@
           "name": "Indexes",
           "description": "Optimization using indexes",
           "dueDate": "2026-06-01T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b81c-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Joins",
+          "description": "Master different types of joins: INNER, LEFT, RIGHT, FULL",
+          "dueDate": "2026-06-08T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b81d-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Transactions",
+          "description": "Implement ACID transactions and rollback mechanisms",
+          "dueDate": "2026-06-15T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b81e-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Stored Procedures",
+          "description": "Create and optimize stored procedures for complex queries",
+          "dueDate": "2026-06-22T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b81f-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Views",
+          "description": "Design virtual tables using views for data abstraction",
+          "dueDate": "2026-06-29T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b820-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Triggers",
+          "description": "Implement database triggers for automated actions",
+          "dueDate": "2026-07-06T23:59:59Z"
+        },
+        {
+          "uuid": "6ba7b821-9dad-11d1-80b4-00c04fd430c8",
+          "name": "Query Optimization",
+          "description": "Analyze and optimize slow queries using execution plans",
+          "dueDate": "2026-07-13T23:59:59Z"
         }
       ],
       "users": [
